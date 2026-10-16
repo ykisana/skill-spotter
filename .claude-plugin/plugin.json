@@ -1,0 +1,10 @@
+{
+  "name": "skill-spotter",
+  "displayName": "Skill Spotter",
+  "version": "0.0.1",
+  "description": "Spots tasks you keep repeating in Claude Code and suggests saving them as a /skill. Local only, zero tokens per turn.",
+  "author": {
+    "name": "ykisana"
+  },
+  "license": "MIT"
+}

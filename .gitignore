@@ -1,0 +1,25 @@
+# Python bytecode caches: rebuilt automatically, differ per machine
+__pycache__/
+*.py[cod]
+
+# Tool caches: pytest and ruff (the linter we'll add in step 10)
+.pytest_cache/
+.ruff_cache/
+
+# Packaging and virtualenv output
+*.egg-info/
+build/
+dist/
+.venv/
+
+# SQLite databases: real user data must never be committed (SPEC §15)
+*.db
+*.db-wal
+*.db-shm
+
+# Method Lab data that must stay local (SPEC §11.4–11.5)
+bench/data/raw/
+bench/data/real/
+
+# Your personal Claude Code settings for this repo
+.claude/settings.local.json
