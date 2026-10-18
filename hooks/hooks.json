@@ -1,0 +1,17 @@
+{
+  "description": "skill-spotter: record turns locally and suggest skills for repeated tasks.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_stop.py"],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
