@@ -1,8 +1,9 @@
 ---
 description: Show skill-spotter's detected patterns, pending suggestions and the skills you created from them.
 disable-model-invocation: true
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/skill-spotter *)
 ---
 
-Reply with exactly this line and nothing else:
+!`${CLAUDE_PLUGIN_ROOT}/bin/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" status`
 
-skill-spotter: no patterns yet.
+Show the skill-spotter status output above to the user as-is, in a code block. Don't add commentary or run other commands.

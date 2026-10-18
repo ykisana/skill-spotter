@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+"""CLI shim: run skill-spotter from the plugin folder without installing it."""
+
+import os
+import sys
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.realpath(__file__))), "src"))
+
+from skill_spotter.cli import main  # noqa: E402  (import must follow the path setup)
+
+sys.exit(main())
