@@ -1,0 +1,12 @@
+[project]
+name = "skill-spotter"
+version = "0.0.1"
+description = "Claude Code plugin that spots repeated tasks and suggests saving them as skills."
+requires-python = ">=3.9"
+# The online tier (everything hooks import) is standard library only. Keep this empty.
+dependencies = []
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-q"
