@@ -55,17 +55,37 @@ def normalize(hook_event: str, payload: Dict[str, Any]) -> handlers.Event:
         event["command_source"] = payload.get("command_source")
     elif kind == "session_end":
         event["reason"] = payload.get("reason")
+    elif kind == "turn_end":
+        crons = payload.get("session_crons")
+        crons = crons if isinstance(crons, list) else []
+        event["scheduled_prompts"] = [c.get("prompt") for c in crons if isinstance(c, dict)]
     return event
 
 
 def render(hook_event: str, result: Any) -> Optional[str]:
     """Hook stdout for a handler result, or None to print nothing.
 
-    Only Stop may print, and only ``systemMessage``: Claude Code shows it to the user
-    without adding it to Claude's context. Anything else costs tokens or changes
+    Stop may print a ``systemMessage``: Claude Code shows it to the user without adding
+    it to Claude's context. UserPromptSubmit may print ``additionalContext``, but only
+    when the user opted into ``suggest_via = claude``. Anything else costs tokens or changes
     Claude's behavior: stdout from UserPromptSubmit and any output from an async hook
     (PostToolUse here) are delivered to Claude, and ``decision`` blocks it.
     """
     if hook_event == "Stop" and isinstance(result, str) and result:
         return json.dumps({"systemMessage": result})
+    if (
+        hook_event == "UserPromptSubmit"
+        and isinstance(result, dict)
+        and isinstance(result.get("context"), str)
+        and result["context"]
+    ):
+        # Opt-in only (suggest_via = claude): ~100 tokens, once per suggestion.
+        return json.dumps(
+            {
+                "hookSpecificOutput": {
+                    "hookEventName": "UserPromptSubmit",
+                    "additionalContext": result["context"][:2000],
+                }
+            }
+        )
     return None

@@ -98,6 +98,43 @@ MIGRATIONS: list[str] = [
         value TEXT NOT NULL
     );
     """,
+    # 2: matching state for M1 (IDF counts, inverted index, per-session filter state)
+    """
+    ALTER TABLE turns ADD COLUMN fingerprint_json TEXT;
+    ALTER TABLE turns ADD COLUMN danger INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE actions ADD COLUMN tool_use_id TEXT;
+    ALTER TABLE actions ADD COLUMN values_json TEXT NOT NULL DEFAULT '[]';
+    CREATE UNIQUE INDEX actions_tool_use ON actions(tool_use_id) WHERE tool_use_id IS NOT NULL;
+    CREATE INDEX turns_pattern ON turns(pattern_id, ts_end);
+
+    CREATE TABLE token_df (
+        project_key TEXT NOT NULL,
+        token       TEXT NOT NULL,
+        df          INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (project_key, token)
+    ) WITHOUT ROWID;
+
+    CREATE TABLE project_stats (
+        project_key TEXT PRIMARY KEY,
+        n_turns     INTEGER NOT NULL DEFAULT 0
+    );
+
+    CREATE TABLE pattern_tokens (
+        token      TEXT NOT NULL,
+        pattern_id INTEGER NOT NULL REFERENCES patterns(id) ON DELETE CASCADE,
+        PRIMARY KEY (token, pattern_id)
+    ) WITHOUT ROWID;
+    CREATE INDEX pattern_tokens_pattern ON pattern_tokens(pattern_id);
+
+    CREATE TABLE session_meta (
+        session_id       TEXT PRIMARY KEY,
+        last_prompt_hash TEXT,
+        last_prompt_ts   REAL,
+        crons_json       TEXT NOT NULL DEFAULT '[]',
+        pending_context  TEXT,
+        updated          REAL NOT NULL DEFAULT 0
+    );
+    """,
 ]
 
 SCHEMA_VERSION = len(MIGRATIONS)
