@@ -1,6 +1,6 @@
 # Method Lab results
 
-Run `2026-10-19T12:28:29` on the synthetic v1 dataset ([dataset card](../../bench/data/dataset_card.md)). Reproduce with `.venv/bin/python -m bench.run --stages text,templating,actions,fusion,cluster,replay`, then `bench.scale`, `bench.naming`, `bench.select`, `bench.report`.
+Run `2026-10-19T13:07:29` on the synthetic v1 dataset ([dataset card](../../bench/data/dataset_card.md)). Reproduce with `.venv/bin/python -m bench.run --stages text,templating,actions,fusion,cluster,replay`, then `bench.scale`, `bench.naming`, `bench.select`, `bench.report`.
 
 **Caveat:** synthetic traces come from templates, so action similarity is easier here than on real
 sessions. The real held-out check (SPEC 11.5) is still pending; the configs are provisional until it passes.
@@ -58,7 +58,7 @@ Grouping accuracy: calls generated from the same trace step should get the same 
 | drain3 | 0.851 | 0.870 | 0.869 | 0.871 |
 | entropy | 0.871 | 0.890 | 0.957 | 0.832 |
 | fig | 0.867 | 0.837 | 0.840 | 0.834 |
-| lsh | 0.855 | 0.873 | 0.947 | 0.809 |
+| lsh | 0.855 | 0.873 | 0.945 | 0.811 |
 
 ## Pairwise: actions
 
@@ -90,46 +90,50 @@ Inputs: text = {'stdlib': 'bm25', 'extras': 'jina_small'}, actions = {'stdlib': 
 
 | method | track | dev PR-AUC | test PR-AUC | test P | test R | test F1 | P@0.9 recall (test) |
 |---|---|---|---|---|---|---|---|
-| gbt<extras> | extras | 1.000 | 0.981 | 0.971 | 0.968 | 0.969 | 0.968 |
-| logreg<extras> | extras | 0.976 | 0.980 | 0.948 | 0.936 | 0.942 | 0.936 |
-| logreg<stdlib> | stdlib | 0.975 | 0.980 | 0.946 | 0.933 | 0.940 | 0.933 |
+| logreg<extras> | extras | 0.962 | 0.971 | 0.941 | 0.886 | 0.913 | 0.886 |
+| logreg_monotone<extras> | extras | 0.960 | 0.971 | 0.932 | 0.883 | 0.907 | 0.883 |
+| logreg<stdlib> | stdlib | 0.962 | 0.970 | 0.933 | 0.899 | 0.916 | 0.899 |
+| logreg_monotone<stdlib> | stdlib | 0.959 | 0.970 | 0.963 | 0.858 | 0.907 | 0.858 |
+| gbt<extras> | extras | 0.999 | 0.969 | 0.938 | 0.902 | 0.920 | 0.902 |
 | rule<stdlib> | stdlib | 0.860 | 0.879 | 0.820 | 0.881 | 0.849 | 0.338 |
 | linear<extras> | extras | 0.864 | 0.874 | 0.830 | 0.870 | 0.850 | 0.330 |
 | linear<stdlib> | stdlib | 0.856 | 0.870 | 0.823 | 0.875 | 0.848 | 0.330 |
 | rule<extras> | extras | 0.700 | 0.724 | 0.865 | 0.767 | 0.813 | 0.390 |
 
-- `logreg<stdlib>` coefficients (standardised features): `{'text': 0.779, 'action': 2.093, 'seq': 1.339, 'files': -0.275, 'n_min': 2.453, 'n_max': -0.646, 'same_session': -0.159, 'log_gap_days': -0.647, 'action_x_text': -0.705, 'few_actions': -0.916}`
-- `logreg<extras>` coefficients (standardised features): `{'text': 0.795, 'action': 3.173, 'seq': 1.404, 'files': -0.28, 'n_min': 2.42, 'n_max': -0.662, 'same_session': -0.17, 'log_gap_days': -0.669, 'action_x_text': -1.638, 'few_actions': -0.904}`
+- `logreg<stdlib>` coefficients (standardised features): `{'text': 0.442, 'action': 2.313, 'seq': 0.987, 'files': -0.292, 'action_x_text': -0.44, 'few_actions': -2.269}`
+- `logreg_monotone<stdlib>` coefficients (standardised features): `{'text': 0.17, 'action': 1.469, 'seq': 1.183, 'files': 0.0, 'action_x_text': 0.0, 'few_actions': -1.994}`
+- `logreg<extras>` coefficients (standardised features): `{'text': 0.498, 'action': 2.734, 'seq': 0.971, 'files': -0.294, 'action_x_text': -0.728, 'few_actions': -2.229}`
+- `logreg_monotone<extras>` coefficients (standardised features): `{'text': 0.359, 'action': 0.938, 'seq': 0.989, 'files': 0.0, 'action_x_text': 0.692, 'few_actions': -1.972}`
 
 Test breakdown by pair type for `logreg<stdlib>`:
 
 | pair type | n | recall / false-positive rate |
 |---|---|---|
-| hard_different | 808 | FP rate 0.000 |
-| hard_related | 708 | FP rate 0.007 |
-| heavy | 567 | recall 0.942 |
-| light | 38 | recall 0.947 |
-| param | 187 | recall 0.909 |
+| hard_different | 808 | FP rate 0.007 |
+| hard_related | 708 | FP rate 0.021 |
+| heavy | 567 | recall 0.898 |
+| light | 38 | recall 0.895 |
+| param | 187 | recall 0.898 |
 | random_oneoff | 2635 | FP rate 0.000 |
-| random_other_task | 767 | FP rate 0.016 |
-| shared_command | 1701 | FP rate 0.043 |
-| terse | 568 | recall 0.937 |
-| typo | 341 | recall 0.924 |
+| random_other_task | 767 | FP rate 0.003 |
+| shared_command | 1701 | FP rate 0.051 |
+| terse | 568 | recall 0.908 |
+| typo | 341 | recall 0.886 |
 
 ## Clustering
 
 | clusterer | track | theta | test B3-F1 | B3-P | B3-R | ARI | NMI | V | one-offs left alone |
 |---|---|---|---|---|---|---|---|---|---|
-| louvain<extras> | extras | 0.9 | 0.994 | 0.992 | 0.997 | 0.971 | 0.999 | 0.999 | 0.987 |
-| agglomerative_average<extras> | extras | 0.9 | 0.993 | 0.995 | 0.992 | 0.963 | 0.999 | 0.999 | 0.989 |
-| leader<extras> | extras | 0.7 | 0.993 | 0.992 | 0.994 | 0.970 | 0.999 | 0.999 | 0.984 |
-| components<stdlib> | stdlib | 0.9 | 0.992 | 0.996 | 0.987 | 0.921 | 0.998 | 0.998 | 1.000 |
-| agglomerative_complete<extras> | extras | 0.5 | 0.991 | 0.990 | 0.992 | 0.959 | 0.998 | 0.998 | 0.980 |
-| components<extras> | extras | 0.9 | 0.991 | 0.984 | 0.997 | 0.917 | 0.998 | 0.998 | 0.987 |
-| dbscan<extras> | extras | 0.9 | 0.991 | 0.984 | 0.997 | 0.917 | 0.998 | 0.998 | 0.987 |
-| leader<stdlib> | stdlib | 0.7 | 0.989 | 0.990 | 0.988 | 0.940 | 0.998 | 0.998 | 0.979 |
-| hdbscan<extras> | extras | 0.5 | 0.980 | 0.985 | 0.976 | 0.852 | 0.995 | 0.995 | 0.983 |
-| kmeans_reference<extras> | extras | 0.3 | 0.052 | 0.026 | 1.000 | 0.011 | 0.518 | 0.518 | 0.000 |
+| louvain<extras> | extras | 0.8 | 0.989 | 0.989 | 0.988 | 0.926 | 0.997 | 0.997 | 0.985 |
+| agglomerative_average<extras> | extras | 0.7 | 0.988 | 0.994 | 0.981 | 0.917 | 0.997 | 0.997 | 0.987 |
+| components<stdlib> | stdlib | 0.8 | 0.987 | 0.996 | 0.978 | 0.901 | 0.997 | 0.997 | 0.992 |
+| leader<extras> | extras | 0.6 | 0.985 | 0.990 | 0.981 | 0.909 | 0.997 | 0.997 | 0.980 |
+| components<extras> | extras | 0.9 | 0.985 | 0.985 | 0.986 | 0.867 | 0.996 | 0.996 | 0.990 |
+| dbscan<extras> | extras | 0.9 | 0.985 | 0.985 | 0.986 | 0.867 | 0.996 | 0.996 | 0.990 |
+| agglomerative_complete<extras> | extras | 0.6 | 0.983 | 0.991 | 0.975 | 0.885 | 0.996 | 0.996 | 0.981 |
+| leader<stdlib> | stdlib | 0.8 | 0.982 | 0.996 | 0.969 | 0.862 | 0.996 | 0.996 | 0.992 |
+| hdbscan<extras> | extras | 0.5 | 0.956 | 0.996 | 0.920 | 0.553 | 0.990 | 0.990 | 0.993 |
+| kmeans_reference<extras> | extras | 0.3 | 0.048 | 0.024 | 1.000 | 0.011 | 0.529 | 0.529 | 0.000 |
 
 ## Replay (product metrics)
 
@@ -137,16 +141,20 @@ Chronological replay with the trigger rule (3+ times, 2+ sessions, 30 days, 1 pe
 
 | method | split | suggestions | precision | recall | median occurrences before first | false / 100 turns | duplicates |
 |---|---|---|---|---|---|---|---|
-| runtime<baseline> | dev | 94 | 0.883 | 0.883 | 7 | 0.286 | 30 |
-| runtime<baseline> | test | 61 | 0.918 | 0.895 | 5.000 | 0.192 | 22 |
-| sim:logreg+leader<stdlib> | dev | 72 | 0.917 | 0.950 | 3.000 | 0.156 | 9 |
-| sim:logreg+leader<stdlib> | test | 43 | 0.954 | 1.000 | 3 | 0.077 | 3 |
-| sim:gbt+leader<extras> | dev | 63 | 0.968 | 1.000 | 3 | 0.052 | 1 |
-| sim:gbt+leader<extras> | test | 39 | 1.000 | 1.000 | 3 | 0.000 | 1 |
-| batch:gbt+leader+hdbscan<extras> | dev | 152 | 0.993 | 1.000 | 7 | 0.026 | 91 |
-| batch:gbt+leader+hdbscan<extras> | test | 93 | 0.989 | 1.000 | 7.000 | 0.038 | 54 |
-| batch:gbt+leader+agglomerative_average<extras> | dev | 164 | 0.988 | 1.000 | 7.000 | 0.052 | 102 |
-| batch:gbt+leader+agglomerative_average<extras> | test | 98 | 1.000 | 1.000 | 7.000 | 0.000 | 60 |
+| runtime<baseline> | dev | 1 | 1.000 | 0.017 | 3 | 0.000 | 0 |
+| runtime<baseline> | test | 0 | – | 0.000 | – | 0.000 | 0 |
+| sim:logreg_monotone+leader<stdlib> | dev | 64 | 0.969 | 0.950 | 3.000 | 0.052 | 5 |
+| sim:logreg_monotone+leader<stdlib> | test | 41 | 1.000 | 0.974 | 3 | 0.000 | 4 |
+| sim:logreg+leader<stdlib> | dev | 66 | 0.955 | 0.950 | 3 | 0.078 | 6 |
+| sim:logreg+leader<stdlib> | test | 43 | 0.977 | 0.974 | 3.000 | 0.038 | 5 |
+| sim:gbt+leader<extras> | dev | 61 | 0.984 | 1.000 | 3.000 | 0.026 | 0 |
+| sim:gbt+leader<extras> | test | 38 | 0.947 | 0.895 | 3.000 | 0.077 | 2 |
+| batch:gbt+leader+hdbscan<extras> | dev | 177 | 0.983 | 1.000 | 7.000 | 0.078 | 114 |
+| batch:gbt+leader+hdbscan<extras> | test | 108 | 0.972 | 0.947 | 7 | 0.115 | 69 |
+| batch:gbt+leader+agglomerative_average<extras> | dev | 166 | 0.982 | 1.000 | 7 | 0.078 | 103 |
+| batch:gbt+leader+agglomerative_average<extras> | test | 94 | 0.957 | 0.947 | 7.000 | 0.153 | 54 |
+| sim:logreg_monotone+leader<extras> | dev | 69 | 0.927 | 0.983 | 3.000 | 0.130 | 5 |
+| sim:logreg_monotone+leader<extras> | test | 42 | 1.000 | 0.974 | 3.000 | 0.000 | 5 |
 
 ## Lookup
 
@@ -170,11 +178,11 @@ Judge scores (1-5, blind, Claude Sonnet) over 38 test families: runtime heuristi
 | matcher | dev P | dev R | test P | test R | test false / 100 turns |
 |---|---|---|---|---|---|
 | rule, M1 baseline (before ADR 0006) | 0.651 | 0.883 | 0.671 | 0.868 | 1.07 |
-| + meaningful-only actions, text gate, no double suggestions | 0.883 | 0.883 | 0.918 | 0.895 | 0.192 |
+| + meaningful-only actions, text gate, no double suggestions | 1.000 | 0.017 | – | 0.000 | 0.000 |
 | + swept rule `{"action_weighting": "none", "action_strong": 0.55, "action_weak": 0.4, "text_gate": 0.08}` | 0.906 | 0.967 | 0.899 | 0.947 | 0.268 |
-| **chosen: logreg fusion + leader (runtime)** | 0.939 | 0.950 | 0.969 | 1.000 | 0.077 |
+| **chosen: logreg fusion + leader (runtime)** | 0.978 | 0.967 | 1.000 | 0.974 | 0.000 |
 
-M4 check, the shipped runtime vs the lab's simulation of the same method (tolerance 0.05): dev difference {'precision': 0.0227, 'recall': 0.0}, test difference {'precision': 0.0153, 'recall': 0.0}.
+M4 check, the shipped runtime vs the lab's simulation of the same method (tolerance 0.05): dev difference {'precision': 0.0092, 'recall': 0.0167}, test difference {'precision': 0.0, 'recall': 0.0}.
 
 ## Multi-turn workflow mining (M5)
 
@@ -191,7 +199,7 @@ M4 check, the shipped runtime vs the lab's simulation of the same method (tolera
 
 ```json
 {
-  "fusion": "logreg",
+  "fusion": "logreg_monotone",
   "text": "bm25",
   "actions": "hier_jaccard_noidf[hand]",
   "clusterer": "leader",
@@ -202,10 +210,6 @@ M4 check, the shipped runtime vs the lab's simulation of the same method (tolera
       "action",
       "seq",
       "files",
-      "n_min",
-      "n_max",
-      "same_session",
-      "log_gap_days",
       "action_x_text",
       "few_actions"
     ],
@@ -214,49 +218,37 @@ M4 check, the shipped runtime vs the lab's simulation of the same method (tolera
       0.21449655092938802,
       0.2892970533023837,
       0.09345437717770055,
-      2.3415396341463413,
-      4.907545731707317,
-      0.011814024390243903,
-      2.528327001484718,
       0.03979813914172222,
       0.657469512195122
     ],
     "scale": [
-      0.13992638559192944,
-      0.3070372625241428,
-      0.3678686548641414,
-      0.2819684109361196,
-      1.9075939564532516,
-      1.9228022965685803,
-      0.10804838368968692,
-      0.9901472154546234,
-      0.09223838276463267,
-      0.47455595321205035
+      0.13992638659192944,
+      0.30703726352414284,
+      0.3678686558641414,
+      0.2819684119361196,
+      0.09223838376463267,
+      0.4745559542120504
     ],
     "coef": [
-      0.7789688427649706,
-      2.093108133176987,
-      1.3388305719452027,
-      -0.2754099450049501,
-      2.4533234305674103,
-      -0.6459005829683172,
-      -0.15868184027796636,
-      -0.646665711221989,
-      -0.7053055553846694,
-      -0.9158815067885798
+      0.16993304409502483,
+      1.4688296733773736,
+      1.1826898638705396,
+      0.0,
+      0.0,
+      -1.994342896752602
     ],
-    "intercept": -5.323329914970214
+    "intercept": -3.9522341071319076
   },
   "track": "stdlib",
   "method_version": "stdlib-2026-10-19",
   "evidence": {
-    "precision": 0.9535,
-    "recall": 1.0,
+    "precision": 1.0,
+    "recall": 0.9737,
     "median_occurrences_before_first": 3,
-    "false_per_100_turns": 0.077,
-    "duplicate_suggestions": 3
+    "false_per_100_turns": 0.0,
+    "duplicate_suggestions": 4
   },
-  "selected_from_run": "2026-10-19T12:28:29",
+  "selected_from_run": "2026-10-19T13:07:29",
   "real_holdout": "pending: run bench.label export/pairs/label/eval (SPEC 11.5)"
 }
 ```
@@ -265,21 +257,56 @@ M4 check, the shipped runtime vs the lab's simulation of the same method (tolera
 
 ```json
 {
-  "fusion": "gbt",
+  "fusion": "logreg_monotone",
   "text": "jina_small",
   "actions": "hier_jaccard_noidf[hand]",
   "clusterer": "leader",
-  "theta": 0.9,
+  "theta": 0.7,
+  "logreg": {
+    "features": [
+      "text",
+      "action",
+      "seq",
+      "files",
+      "action_x_text",
+      "few_actions"
+    ],
+    "mean": [
+      0.750003926260624,
+      0.21449655092938802,
+      0.2892970533023837,
+      0.09345437717770055,
+      0.17014858809154007,
+      0.657469512195122
+    ],
+    "scale": [
+      0.057317773542056395,
+      0.30703726352414284,
+      0.3678686558641414,
+      0.2819684119361196,
+      0.2481916713409849,
+      0.4745559542120504
+    ],
+    "coef": [
+      0.3589506290455501,
+      0.9383795595221465,
+      0.9888898847480261,
+      0.0,
+      0.6917166881107906,
+      -1.9717347414957642
+    ],
+    "intercept": -3.981001828032598
+  },
   "track": "extras",
   "method_version": "extras-2026-10-19",
   "evidence": {
     "precision": 1.0,
-    "recall": 1.0,
-    "median_occurrences_before_first": 3,
+    "recall": 0.9737,
+    "median_occurrences_before_first": 3.0,
     "false_per_100_turns": 0.0,
-    "duplicate_suggestions": 1
+    "duplicate_suggestions": 5
   },
-  "selected_from_run": "2026-10-19T12:28:29",
+  "selected_from_run": "2026-10-19T13:07:29",
   "real_holdout": "pending: run bench.label export/pairs/label/eval (SPEC 11.5)"
 }
 ```

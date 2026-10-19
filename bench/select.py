@@ -26,6 +26,7 @@ COST = {
     "rule": 0,
     "linear": 1,
     "logreg": 2,
+    "logreg_monotone": 2,
     "gbt": 4,
     "runtime<baseline>": 0,
 }
@@ -52,6 +53,22 @@ def choose(rows, track):
             and r.get("split") == "test"
         ]
     fusion = {r["method"]: r for r in rows if r.get("stage") == "fusion"}
+
+    def monotone(r):
+        """Online-tier eligibility: learned fusers must not weigh similarity negatively,
+        or they extrapolate wrongly beyond the synthetic data (ADR 0007)."""
+        if not r["method"].startswith("sim:"):
+            return True
+        fname = r["method"].split(":")[1].split("+")[0]
+        coefs = fusion.get(f"{fname}<{track}>", {}).get("coefficients")
+        if not coefs:
+            return fname not in ("logreg",)
+        return all(
+            coefs.get(f, 0) >= 0 for f in ("text", "action", "seq", "files", "action_x_text")
+        )
+
+    if track == "stdlib":
+        replays = [r for r in replays if monotone(r)]
     passing = [r for r in replays if (r.get("precision") or 0) >= 0.90] or replays
     passing.sort(key=lambda r: (-(r.get("recall") or 0), -(r.get("precision") or 0)))
     best = passing[0]

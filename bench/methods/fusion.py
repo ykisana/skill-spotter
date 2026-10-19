@@ -15,18 +15,10 @@ from skill_spotter.match import baseline
 
 from .base import register
 
-FEATURES = [
-    "text",
-    "action",
-    "seq",
-    "files",
-    "n_min",
-    "n_max",
-    "same_session",
-    "log_gap_days",
-    "action_x_text",
-    "few_actions",
-]
+# Content features only. Timeline features (same session, time gap) and raw action counts
+# were dropped after M3: the model learned the synthetic generator's timeline from them
+# ("same session = different task"), which would mislead on real use (ADR 0007).
+FEATURES = ["text", "action", "seq", "files", "action_x_text", "few_actions"]
 
 
 def derived(cols: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
@@ -136,3 +128,55 @@ class GradientBoosted(Fuser):
 
     def predict(self, cols):
         return self.model.predict_proba(feature_matrix(cols))[:, 1]
+
+
+@register("fusion", "logreg_monotone")
+class MonotoneLogReg(Fuser):
+    """Logistic regression whose similarity weights are constrained to be >= 0, so more
+    agreement in text, actions, sequence or files can never lower the score. The plain
+    logreg learned a negative action x text weight on synthetic data (paraphrased repeats
+    rarely overlap in words) and then rejected near-identical real prompts (ADR 0007).
+    Fitted with L-BFGS-B; inference is the same dot product as logreg."""
+
+    name = "logreg_monotone"
+    MONOTONE = {"text", "action", "seq", "files", "action_x_text"}
+
+    def fit(self, cols, y):
+        from scipy.optimize import minimize
+
+        X = feature_matrix(cols)
+        self.mean = X.mean(axis=0)
+        self.scale = X.std(axis=0) + 1e-9
+        Z = (X - self.mean) / self.scale
+        y = np.asarray(y, dtype=float)
+        n, d = Z.shape
+
+        def loss(w):
+            b, coef = w[0], w[1:]
+            z = Z @ coef + b
+            p = 1.0 / (1.0 + np.exp(-z))
+            value = np.mean(np.logaddexp(0.0, z) - y * z) + 1e-3 * np.sum(coef**2)
+            grad = np.concatenate([[np.mean(p - y)], Z.T @ (p - y) / n + 2e-3 * coef])
+            return value, grad
+
+        bounds = [(None, None)] + [
+            (0.0, None) if f in self.MONOTONE else (None, None) for f in FEATURES
+        ]
+        result = minimize(loss, np.zeros(d + 1), jac=True, bounds=bounds, method="L-BFGS-B")
+        self.intercept, self.coef = float(result.x[0]), result.x[1:]
+
+    def predict(self, cols):
+        Z = (feature_matrix(cols) - self.mean) / self.scale
+        return 1.0 / (1.0 + np.exp(-(Z @ self.coef + self.intercept)))
+
+    def coefficients(self):
+        return dict(zip(FEATURES, [round(float(c), 3) for c in self.coef]))
+
+    def export(self):
+        return {
+            "features": FEATURES,
+            "mean": [float(x) for x in self.mean],
+            "scale": [float(x) for x in self.scale],
+            "coef": [float(x) for x in self.coef],
+            "intercept": self.intercept,
+        }

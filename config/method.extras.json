@@ -1,18 +1,53 @@
 {
-  "fusion": "gbt",
+  "fusion": "logreg_monotone",
   "text": "jina_small",
   "actions": "hier_jaccard_noidf[hand]",
   "clusterer": "leader",
-  "theta": 0.9,
+  "theta": 0.7,
+  "logreg": {
+    "features": [
+      "text",
+      "action",
+      "seq",
+      "files",
+      "action_x_text",
+      "few_actions"
+    ],
+    "mean": [
+      0.750003926260624,
+      0.21449655092938802,
+      0.2892970533023837,
+      0.09345437717770055,
+      0.17014858809154007,
+      0.657469512195122
+    ],
+    "scale": [
+      0.057317773542056395,
+      0.30703726352414284,
+      0.3678686558641414,
+      0.2819684119361196,
+      0.2481916713409849,
+      0.4745559542120504
+    ],
+    "coef": [
+      0.3589506290455501,
+      0.9383795595221465,
+      0.9888898847480261,
+      0.0,
+      0.6917166881107906,
+      -1.9717347414957642
+    ],
+    "intercept": -3.981001828032598
+  },
   "track": "extras",
   "method_version": "extras-2026-10-19",
   "evidence": {
     "precision": 1.0,
-    "recall": 1.0,
-    "median_occurrences_before_first": 3,
+    "recall": 0.9737,
+    "median_occurrences_before_first": 3.0,
     "false_per_100_turns": 0.0,
-    "duplicate_suggestions": 1
+    "duplicate_suggestions": 5
   },
-  "selected_from_run": "2026-10-19T12:28:29",
+  "selected_from_run": "2026-10-19T13:07:29",
   "real_holdout": "pending: run bench.label export/pairs/label/eval (SPEC 11.5)"
 }

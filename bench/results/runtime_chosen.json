@@ -1,6 +1,6 @@
 {
  "config": {
-  "fusion": "logreg",
+  "fusion": "logreg_monotone",
   "text": "bm25",
   "actions": "hier_jaccard_noidf[hand]",
   "theta": 0.7,
@@ -9,51 +9,51 @@
  "dev": {
   "runtime": {
    "turns": 3852,
-   "suggestions": 99,
-   "correct": 93,
-   "precision": 0.9394,
+   "suggestions": 91,
+   "correct": 89,
+   "precision": 0.978,
    "eligible_families": 60,
-   "recall": 0.95,
+   "recall": 0.9667,
    "median_occurrences_before_first": 4,
-   "false_per_100_turns": 0.156,
-   "duplicate_suggestions": 36,
-   "resuggested_after_snooze": 31,
-   "extra_patterns_per_family": 5,
-   "seconds": 40.9
+   "false_per_100_turns": 0.052,
+   "duplicate_suggestions": 31,
+   "resuggested_after_snooze": 28,
+   "extra_patterns_per_family": 3,
+   "seconds": 99.6
   },
   "lab": {
-   "precision": 0.9167,
+   "precision": 0.9688,
    "recall": 0.95,
    "theta": 0.7
   },
   "difference": {
-   "precision": 0.0227,
-   "recall": 0.0
+   "precision": 0.0092,
+   "recall": 0.0167
   },
   "within_tolerance": true
  },
  "test": {
   "runtime": {
    "turns": 2608,
-   "suggestions": 64,
+   "suggestions": 62,
    "correct": 62,
-   "precision": 0.9688,
+   "precision": 1.0,
    "eligible_families": 38,
-   "recall": 1.0,
-   "median_occurrences_before_first": 4.0,
-   "false_per_100_turns": 0.077,
-   "duplicate_suggestions": 24,
-   "resuggested_after_snooze": 21,
-   "extra_patterns_per_family": 3,
-   "seconds": 26.6
+   "recall": 0.9737,
+   "median_occurrences_before_first": 5.0,
+   "false_per_100_turns": 0.0,
+   "duplicate_suggestions": 25,
+   "resuggested_after_snooze": 20,
+   "extra_patterns_per_family": 5,
+   "seconds": 120.5
   },
   "lab": {
-   "precision": 0.9535,
-   "recall": 1.0,
+   "precision": 1.0,
+   "recall": 0.9737,
    "theta": 0.7
   },
   "difference": {
-   "precision": 0.0153,
+   "precision": 0.0,
    "recall": 0.0
   },
   "within_tolerance": true

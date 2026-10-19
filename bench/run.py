@@ -40,13 +40,17 @@ STDLIB_ACTIONS = {
     "fileset",
 }
 STDLIB_TEMPLATERS = {"hand", "drain", "entropy", "fig"}
-STDLIB_FUSION = {"rule", "linear", "logreg"}  # logreg inference is a dot product
+STDLIB_FUSION = {"rule", "linear", "logreg", "logreg_monotone"}  # logreg inference is a dot product
 STDLIB_CLUSTER = {"leader", "components"}
 
 
 class Lab:
+    # Fusers replayed per track (the selection rule needs replay numbers for each).
+    REPLAY_FUSERS = {"stdlib": ("logreg_monotone", "logreg"), "extras": ("gbt", "logreg_monotone")}
+
     def __init__(self, reuse: bool = False):
         self.reuse = reuse
+        self.fusers = {}
         self.dev = D.load("dev")
         self.test = D.load("test")
         self.pairs = {"dev": D.make_pairs(self.dev), "test": D.make_pairs(self.test)}
@@ -258,6 +262,7 @@ class Lab:
                 if hasattr(fuser, "w"):
                     extra["w_text"] = round(float(fuser.w), 3)
                 res = self.evaluate_scores("fusion", f"{fname}<{track}>", scores, extra, track)
+                self.fusers.setdefault(track, {})[fname] = fuser
                 if track not in best or (res["dev"]["pr_auc"] or 0) > best[track][1]:
                     best[track] = (fname, res["dev"]["pr_auc"] or 0, fuser)
         return best
@@ -366,8 +371,15 @@ class Lab:
         action_by_track,
         batch_names=("hdbscan", "agglomerative_average"),
     ):
-        from .replay import replay_runtime, replay_sim
+        import os
+        import tempfile
 
+        from .replay import replay_runtime
+
+        # The baseline is the M1 rule, whatever config/method.json currently ships.
+        with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False) as f:
+            json.dump({"fusion": "rule"}, f)
+        os.environ["SKILL_SPOTTER_METHOD_CONFIG"] = f.name
         for split in ("dev", "test"):
             res = replay_runtime(self.turns[split])
             self.log(
@@ -378,46 +390,66 @@ class Lab:
                 **res["metrics"],
             )
             print(f"replay     runtime<baseline> {split}: {res['metrics']}")
+        os.environ.pop("SKILL_SPOTTER_METHOD_CONFIG", None)
+        os.unlink(f.name)
         for track in ("stdlib", "extras"):
-            fname, _ap, fuser = fusion_best[track]
-            scorers = {
-                s: self.build_scorer(s, track, text_by_track[track], action_by_track[track], fuser)
-                for s in ("dev", "test")
-            }
-            grid = []
-            for theta in (0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9):
-                m = replay_sim(self.dev, scorers["dev"], theta)["metrics"]
-                grid.append((theta, m))
-            ok = [g for g in grid if (g[1]["precision"] or 0) >= 0.9] or grid
-            theta = max(ok, key=lambda g: (g[1]["recall"] or 0, g[1]["precision"] or 0))[0]
+            for fname in self.REPLAY_FUSERS[track]:
+                fuser = self.fusers.get(track, {}).get(fname)
+                if fuser is None:
+                    continue
+                self._replay_fuser(
+                    track,
+                    fname,
+                    fuser,
+                    text_by_track,
+                    action_by_track,
+                    batch_names if (track == "extras" and fname == "gbt") else (),
+                )
+
+    def _replay_fuser(self, track, fname, fuser, text_by_track, action_by_track, batch_names):
+        from .replay import replay_sim
+
+        scorers = {
+            s: self.build_scorer(s, track, text_by_track[track], action_by_track[track], fuser)
+            for s in ("dev", "test")
+        }
+        grid = []
+        for theta in (0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9):
+            grid.append((theta, replay_sim(self.dev, scorers["dev"], theta)["metrics"]))
+        ok = [g for g in grid if (g[1]["precision"] or 0) >= 0.9] or grid
+        best_recall = max(g[1]["recall"] or 0 for g in ok)
+        tied = [g for g in ok if (g[1]["recall"] or 0) >= best_recall - 1e-9]
+        best_precision = max(g[1]["precision"] or 0 for g in tied)
+        # Ties: the most permissive threshold within 0.01 precision of the best, so real
+        # near-identical repeats (rare in paraphrased synthetic data) still join.
+        theta = min(g[0] for g in tied if (g[1]["precision"] or 0) >= best_precision - 0.01)
+        for split in ("dev", "test"):
+            m = replay_sim(self.turns[split], scorers[split], theta)["metrics"]
+            self.log(
+                stage="replay",
+                method=f"sim:{fname}+leader<{track}>",
+                track=track,
+                split=split,
+                theta=theta,
+                dev_grid=[(t, g["precision"], g["recall"]) for t, g in grid],
+                **m,
+            )
+            print(f"replay     sim:{fname}+leader<{track}> {split} theta {theta}: {m}")
+        for cname in batch_names:
             for split in ("dev", "test"):
-                m = replay_sim(self.turns[split], scorers[split], theta)["metrics"]
+                clusterer = make("cluster", cname, theta=theta)
+                m = replay_sim(self.turns[split], scorers[split], theta, batch_clusterer=clusterer)[
+                    "metrics"
+                ]
                 self.log(
                     stage="replay",
-                    method=f"sim:{fname}+leader<{track}>",
+                    method=f"batch:{fname}+leader+{cname}<{track}>",
                     track=track,
                     split=split,
                     theta=theta,
-                    dev_grid=[(t, g["precision"], g["recall"]) for t, g in grid],
                     **m,
                 )
-                print(f"replay     sim:{fname}+leader<{track}> {split} theta {theta}: {m}")
-            if track == "extras":
-                for cname in batch_names:
-                    for split in ("dev", "test"):
-                        clusterer = make("cluster", cname, theta=theta)
-                        m = replay_sim(
-                            self.turns[split], scorers[split], theta, batch_clusterer=clusterer
-                        )["metrics"]
-                        self.log(
-                            stage="replay",
-                            method=f"batch:{fname}+leader+{cname}<{track}>",
-                            track=track,
-                            split=split,
-                            theta=theta,
-                            **m,
-                        )
-                        print(f"replay     batch:{fname}+{cname}<{track}> {split}: {m}")
+                print(f"replay     batch:{fname}+{cname}<{track}> {split}: {m}")
 
 
 def pick_best(results: Dict[str, dict], allowed: set) -> str:

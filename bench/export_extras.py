@@ -26,12 +26,17 @@ ROOT = Path(__file__).resolve().parent.parent
 
 def main():
     config = json.loads((ROOT / "config" / "method.extras.json").read_text())
+    out = ROOT / "config" / "model.extras.pkl"
+    if config["fusion"] != "gbt":
+        # Linear fusers ship as coefficients inside the config; no pickle needed.
+        out.unlink(missing_ok=True)
+        print(f"{config['fusion']}: coefficients are in config/method.extras.json; no model file")
+        return
     lab = Lab(reuse=True)
     cols = lab.pair_columns("dev", config["text"], config["actions"])
     y = np.array([p[2] for p in lab.pairs["dev"]])
     fuser = F.GradientBoosted()
     fuser.fit(cols, y)
-    out = ROOT / "config" / "model.extras.pkl"
     with out.open("wb") as f:
         pickle.dump(
             {
