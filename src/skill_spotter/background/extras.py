@@ -25,10 +25,15 @@ MODEL_IDS = {
 class ExtrasScorer(fused.FusedScorer):
     def __init__(self, config, model_path, cache_dir):
         super().__init__({**config, "fusion": "rule"})
-        with open(model_path, "rb") as f:
-            bundle = pickle.load(f)
-        self.model = bundle["model"]
-        self.feature_names = bundle["features"]
+        self.linear = None
+        if model_path is not None:
+            with open(model_path, "rb") as f:
+                bundle = pickle.load(f)
+            self.model = bundle["model"]
+            self.feature_names = bundle["features"]
+        else:  # a linear fuser shipped as coefficients in the config
+            self.linear = config["logreg"]
+            self.feature_names = self.linear["features"]
         self.embed_name = config.get("text", "jina_small")
         self.cache_dir = cache_dir
         self.batch_theta = float(config.get("batch_theta") or config.get("theta") or 0.9)
@@ -95,7 +100,14 @@ class ExtrasScorer(fused.FusedScorer):
             rows.append([f[name] for name in self.feature_names])
         if not rows:
             return []
-        return [float(p) for p in self.model.predict_proba(np.array(rows))[:, 1]]
+        X = np.array(rows)
+        if self.linear is not None:
+            lr = self.linear
+            z = ((X - np.array(lr["mean"])) / np.array(lr["scale"])) @ np.array(lr["coef"]) + lr[
+                "intercept"
+            ]
+            return [float(p) for p in 1.0 / (1.0 + np.exp(-z))]
+        return [float(p) for p in self.model.predict_proba(X)[:, 1]]
 
     def score(self, a, b) -> float:
         return self.score_many([(a, b)])[0]
@@ -106,7 +118,11 @@ def load(base, config_dir) -> ExtrasScorer | None:
 
     config_path = config_dir / "method.extras.json"
     model_path = config_dir / "model.extras.pkl"
-    if not (config_path.is_file() and model_path.is_file()):
+    if not config_path.is_file():
         return None
     config: Dict = json.loads(config_path.read_text())
-    return ExtrasScorer(config, model_path, base / "extras" / "models")
+    if config.get("fusion") == "gbt" and not model_path.is_file():
+        return None
+    return ExtrasScorer(
+        config, model_path if config.get("fusion") == "gbt" else None, base / "extras" / "models"
+    )

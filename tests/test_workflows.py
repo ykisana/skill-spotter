@@ -89,7 +89,8 @@ def test_three_step_workflow_in_three_sessions_gives_one_suggestion(repo, db, at
     msg = messages[0]
     assert "3-step workflow in 3 sessions" in msg and "/skill-spotter:draft w" in msg
     conn = db()
-    wf = conn.execute("SELECT * FROM workflows WHERE state = 'suggested'").fetchone()
+    # suggested, then snoozed when the session ended without the user acting on it
+    wf = conn.execute("SELECT * FROM workflows WHERE state = 'snoozed'").fetchone()
     assert len(json.loads(wf["steps_json"])) == 3
     # the step patterns are part of the workflow now, and never suggested on their own
     steps = json.loads(wf["steps_json"])

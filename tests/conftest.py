@@ -5,6 +5,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
+RULE_CONFIG = ROOT / "tests" / "fixtures" / "rule_config.json"
 
 
 @pytest.fixture(autouse=True)
@@ -13,4 +14,7 @@ def isolated_data_dir(tmp_path, monkeypatch):
     data = tmp_path / "data"
     monkeypatch.setenv("SKILL_SPOTTER_DATA", str(data))
     monkeypatch.delenv("CLAUDE_PLUGIN_DATA", raising=False)
+    # Mechanics tests use the plain rule matcher, independent of what the Method Lab ships
+    # in config/method.json; test_shipped_matcher.py covers the shipped one.
+    monkeypatch.setenv("SKILL_SPOTTER_METHOD_CONFIG", str(RULE_CONFIG))
     return data

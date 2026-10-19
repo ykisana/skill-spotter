@@ -169,6 +169,11 @@ MIGRATIONS: list[str] = [
     ALTER TABLE patterns ADD COLUMN workflow_id INTEGER;
     ALTER TABLE events ADD COLUMN workflow_id INTEGER;
     """,
+    # 5: M7 mod band: sessions where the band shows suggestions instead of systemMessage
+    """
+    ALTER TABLE session_meta ADD COLUMN band_active INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE session_meta ADD COLUMN pending_band TEXT;
+    """,
 ]
 
 SCHEMA_VERSION = len(MIGRATIONS)

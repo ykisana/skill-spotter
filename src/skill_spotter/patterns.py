@@ -225,7 +225,7 @@ def finalize_turn(conn: sqlite3.Connection, prompt_id: str, now: float) -> Optio
             from .match import fused
 
             scorer = fused.load_scorer()
-            if scorer.fusion != "rule":
+            if scorer.fusion != "rule" and tokens:
                 turn_data = {
                     "fp": fingerprint,
                     "seq": seq,
@@ -240,8 +240,11 @@ def finalize_turn(conn: sqlite3.Connection, prompt_id: str, now: float) -> Optio
                     conn, scorer, project_key, turn_data, fingerprint, grams, now
                 )
             else:
+                params = fused.online_params()
+                if not tokens:  # shell history: no prompt, so actions alone decide
+                    params = {**params, "text_gate": 0.0}
                 pattern_id, _a, _t = best_match(
-                    conn, project_key, fingerprint, grams, n_meaningful, now
+                    conn, project_key, fingerprint, grams, n_meaningful, now, params
                 )
             # Count this turn in the IDF statistics after matching against the old ones.
             conn.executemany(

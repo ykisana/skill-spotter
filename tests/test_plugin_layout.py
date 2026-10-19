@@ -45,7 +45,7 @@ def test_plugin_skills_are_manual_only(path):
 def test_skills_only_preapprove_the_cli(path):
     allowed = frontmatter(path).get("allowed-tools")
     if allowed is not None:
-        assert allowed == "Bash(${CLAUDE_PLUGIN_ROOT}/bin/skill-spotter *)"
+        assert allowed == "Bash(${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter *)"
 
 
 def imported_roots(path):
@@ -72,7 +72,7 @@ def test_online_tier_imports_stdlib_only(path):
 
 @pytest.mark.parametrize(
     "path",
-    sorted((ROOT / "hooks").glob("*.py")) + [ROOT / "bin" / "skill-spotter"],
+    sorted((ROOT / "hooks").glob("*.py")) + [ROOT / "scripts" / "skill-spotter"],
     ids=lambda p: p.name,
 )
 def test_entry_points_are_executable(path):

@@ -1,0 +1,14 @@
+{
+  "name": "skill-spotter",
+  "description": "skill-spotter: notices tasks you repeat in Claude Code and suggests saving them as skills. Local only, zero tokens per turn.",
+  "owner": {
+    "name": "ykisana"
+  },
+  "plugins": [
+    {
+      "name": "skill-spotter",
+      "source": "./",
+      "description": "Spots tasks you keep repeating in Claude Code and suggests saving them as a /skill. Local only, zero tokens per turn."
+    }
+  ]
+}

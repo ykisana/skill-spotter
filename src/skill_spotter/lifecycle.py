@@ -63,6 +63,22 @@ def accept(
     return True
 
 
+def accept_workflow(
+    conn: sqlite3.Connection, workflow_id: int, skill_path: str, now: float, via: str
+) -> bool:
+    cur = conn.execute(
+        "UPDATE workflows SET state = 'accepted', skill_path = ?, "
+        "suggested_name = COALESCE(?, suggested_name) WHERE id = ?",
+        (skill_path, skill_name_from_path(skill_path), workflow_id),
+    )
+    if cur.rowcount:
+        conn.execute(
+            "INSERT INTO events(ts, type, workflow_id, data_json) VALUES(?, 'accepted', ?, ?)",
+            (now, workflow_id, json.dumps({"via": via, "skill_path": skill_path})),
+        )
+    return bool(cur.rowcount)
+
+
 def skill_name_from_path(path: Optional[str]) -> Optional[str]:
     if not path:
         return None
@@ -85,6 +101,13 @@ def skill_file_changed(
         (name, *WAITING_STATES, project_key),
     ).fetchone()
     if row is None:
+        wf = conn.execute(
+            "SELECT id FROM workflows WHERE suggested_name = ? AND state IN ('suggested', "
+            "'snoozed')",
+            (name,),
+        ).fetchone()
+        if wf is not None:
+            accept_workflow(conn, wf[0], os.path.abspath(file_path), now, via="config_change")
         return None
     accept(conn, row[0], os.path.abspath(file_path), now, via="config_change")
     return row[0]
@@ -126,10 +149,32 @@ def command_used(
         if name in (skill_name_from_path(row["skill_path"]), row["suggested_name"]):
             log_event(conn, "used", now, row["id"], session_id, command=name)
             return row["id"]
+    for row in conn.execute(
+        "SELECT id, skill_path, suggested_name FROM workflows WHERE state = 'accepted'"
+    ):
+        if name in (skill_name_from_path(row["skill_path"]), row["suggested_name"]):
+            conn.execute(
+                "INSERT INTO events(ts, type, session_id, workflow_id, data_json) VALUES(?, "
+                "'used', ?, ?, ?)",
+                (now, session_id, row["id"], json.dumps({"command": name})),
+            )
+            return None
     return None
 
 
 def snooze_unanswered(conn: sqlite3.Connection, session_id: Optional[str], now: float) -> List[int]:
+    if session_id:
+        for (wid,) in conn.execute(
+            "SELECT DISTINCT w.id FROM events e JOIN workflows w ON w.id = e.workflow_id "
+            "WHERE e.type = 'suggested' AND e.session_id = ? AND w.state = 'suggested'",
+            (session_id,),
+        ).fetchall():
+            conn.execute(
+                "UPDATE workflows SET snooze_count = snooze_count + 1, state = CASE WHEN "
+                "snooze_count + 1 >= ? THEN 'dismissed' ELSE 'snoozed' END, state_until = ? "
+                "WHERE id = ?",
+                (DISMISS_AFTER_SNOOZES, now + SNOOZE_DAYS * DAY, wid),
+            )
     """SessionEnd: suggestions made in this session that are still waiting get snoozed;
     the second snooze dismisses the pattern."""
     if not session_id:

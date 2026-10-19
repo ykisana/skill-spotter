@@ -2,13 +2,13 @@
 description: Save a repeated task that skill-spotter found as a reusable /skill. Usage: /skill-spotter:draft <pattern-id> [manual|auto]
 argument-hint: <pattern-id> [manual|auto]
 disable-model-invocation: true
-allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/bin/skill-spotter *)
+allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter *)
 ---
 
 Turn skill-spotter pattern `$0` into a skill the user can run with `/name`.
 
 1. Get the pattern:
-   `${CLAUDE_PLUGIN_ROOT}/bin/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" show $0 --json`
+   `${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" show $0 --json`
    It lists the redacted prompts the user typed, the steps Claude took each time (`common_steps`, in order), the values that changed between runs (`varying_values`), danger flags, a suggested name and the path to write (`skill_path`). If the command fails, show its error and stop.
 
 2. Work out the task:
@@ -28,6 +28,6 @@ Turn skill-spotter pattern `$0` into a skill the user can run with `/name`.
    Keep it short (well under 100 lines). Don't copy redacted values or secrets into it.
 
 5. Record it:
-   `${CLAUDE_PLUGIN_ROOT}/bin/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" accept $0 <the path you wrote>`
+   `${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" accept $0 <the path you wrote>`
 
 6. Tell the user: "Saved. Next time: `/<name>`". If `skills_dir_exists` was false before you wrote the file, add: "Run `/reload-skills` once so Claude Code picks it up."

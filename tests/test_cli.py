@@ -72,7 +72,7 @@ def test_extras_needs_confirmation_and_can_be_removed(monkeypatch, isolated_data
 
 def test_bin_shim_runs():
     result = subprocess.run(
-        [sys.executable, str(ROOT / "bin" / "skill-spotter"), "status"],
+        [sys.executable, str(ROOT / "scripts" / "skill-spotter"), "status"],
         capture_output=True,
         text=True,
     )

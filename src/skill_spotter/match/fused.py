@@ -110,6 +110,8 @@ class FusedScorer:
         self.fusion = config.get("fusion", "rule")
         lr = config.get("logreg") or {}
         self.lr = lr if lr.get("coef") else None
+        if self.fusion == "logreg_monotone":
+            self.fusion = "logreg"  # same exported form: sigmoid(w . z + b)
         if self.fusion == "logreg" and not self.lr:
             self.fusion = "rule"
         self.theta = float(config.get("theta") or 0.5)

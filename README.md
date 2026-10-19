@@ -29,7 +29,7 @@ To see where suggestions will appear, start with `SKILL_SPOTTER_DEBUG_SUGGEST=1 
 | `/skill-spotter:on` / `off` | Resume / pause suggestions |
 | `/skill-spotter:forget` | Delete all stored data (asks first) |
 
-The same commands work from a terminal: `bin/skill-spotter --help`.
+The same commands work from a terminal: `scripts/skill-spotter --help`.
 
 ## How it's built
 

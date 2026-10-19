@@ -23,6 +23,6 @@ The project spec was written for a working name, "skillnudge". It left the final
 
 ## Consequences
 
-- A top-level `bin/` puts `skill-spotter` on the Bash tool's `PATH` while the plugin is enabled. But claude.ai and Cowork won't install a plugin that has one. Revisit before publishing; the likely fix is moving the shim to `scripts/`.
+- A top-level `bin/` puts `skill-spotter` on the Bash tool's `PATH` while the plugin is enabled. But claude.ai and Cowork won't install a plugin that has one. **Done in M8:** the shim moved to `scripts/skill-spotter`; skills call it by its full `${CLAUDE_PLUGIN_ROOT}` path, so nothing relied on `PATH`.
 - Hook tests start real processes, the way Claude Code runs them. That is slower than in-process tests, but it catches import-path and exit-code bugs.
 - `ruff format` (0.17+) also formats code blocks inside Markdown, so `*.md` is excluded from ruff.

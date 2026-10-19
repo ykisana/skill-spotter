@@ -19,6 +19,67 @@ def parse_pattern_id(text: str) -> Optional[int]:
     return int(text) if text.isdigit() else None
 
 
+def parse_workflow_id(text: str) -> Optional[int]:
+    text = (text or "").strip().lower()
+    return int(text[1:]) if text.startswith("w") and text[1:].isdigit() else None
+
+
+def workflow_detail(conn: sqlite3.Connection, workflow_id: int) -> Optional[Dict[str, Any]]:
+    """A multi-prompt workflow: each step's pattern detail, in order (M5)."""
+    w = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()
+    if w is None:
+        return None
+    steps = []
+    for k, pid in enumerate(json.loads(w["steps_json"]), 1):
+        d = pattern_detail(conn, pid)
+        if d is None:
+            continue
+        steps.append(
+            {
+                "step": k,
+                "pattern": d["id"],
+                "prompts": [t["prompt"] for t in d["turns"][:4]],
+                "common_steps": d["common_steps"],
+                "varying_values": d["varying_values"],
+                "danger": d["danger"],
+                "dangerous_steps": d["dangerous_steps"],
+            }
+        )
+    root = w["project_key"] if w["project_key"] != "?" else None
+    name = w["suggested_name"] or "workflow"
+    skills_dir = (
+        os.path.join(root, ".claude", "skills") if root else os.path.expanduser("~/.claude/skills")
+    )
+    return {
+        "id": f"w{w['id']}",
+        "kind": "workflow",
+        "project": w["project_key"],
+        "state": w["state"],
+        "sessions": w["session_count"],
+        "count": w["count"],
+        "suggested_name": name,
+        "danger": any(st["danger"] for st in steps),
+        "steps": steps,
+        "skill_scope": "project" if root else "personal",
+        "skills_dir": skills_dir,
+        "skills_dir_exists": os.path.isdir(skills_dir),
+        "skill_path": os.path.join(skills_dir, name, "SKILL.md"),
+    }
+
+
+def format_workflow(d: Dict[str, Any]) -> str:
+    lines = [
+        f"{d['id']}  /{d['suggested_name']}  [{d['state']}]  in {d['sessions']} sessions",
+        f"project: {d['project']}",
+    ]
+    for st in d["steps"]:
+        lines.append(
+            f"step {st['step']} ({st['pattern']}): {st['prompts'][0] if st['prompts'] else ''}"
+        )
+        lines += [f"    - {c['step']}" for c in st["common_steps"]]
+    return "\n".join(lines)
+
+
 def _iso(ts: Optional[float]) -> Optional[str]:
     return time.strftime("%Y-%m-%d %H:%M", time.localtime(ts)) if ts else None
 

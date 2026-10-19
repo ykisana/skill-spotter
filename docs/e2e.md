@@ -58,7 +58,7 @@ claude --plugin-dir $P -p "write release notes into the changelog for commits af
 Expect, after the third run: `Stop says: [skill-spotter] You've done this 3 times (pattern p1). Run /skill-spotter:draft p1 to save it as /update-changelog.`
 
 ```bash
-$P/bin/skill-spotter --data-dir ~/.claude/plugins/data/skill-spotter-inline show p1
+$P/scripts/skill-spotter --data-dir ~/.claude/plugins/data/skill-spotter-inline show p1
 claude --plugin-dir $P -p "/skill-spotter:draft p1 manual" --permission-mode bypassPermissions
 cat .claude/skills/update-changelog/SKILL.md      # manual-only skill with the observed steps
 claude --plugin-dir $P -p "/update-changelog" --allowedTools "Bash(git *)" Read Edit
@@ -81,8 +81,40 @@ sqlite3 $D/skill-spotter.db "insert or replace into settings values('min_count',
 | Accept via ConfigChange | in a session long enough for the file watcher (e.g. ask Claude to write `.claude/skills/<suggested-name>/SKILL.md` then `sleep 3`) | `accepted` event with `"via": "config_change"`; debug log shows `ConfigChange:skills … status 0` |
 | Accept via scan | create the skill folder outside a session, then run any turn in the project | `"via": "scan"` |
 | Usage | `claude -p "/<skill-name>"` | a `used` event; `skill-spotter status` shows `used 1x` |
-| Stats | `bin/skill-spotter --data-dir $D stats` | suggestions shown, accepted %, skills used at least once |
+| Stats | `scripts/skill-spotter --data-dir $D stats` | suggestions shown, accepted %, skills used at least once |
 
 ```bash
 sqlite3 $D/skill-spotter.db "delete from settings where key in ('min_count','min_sessions');"
 ```
+
+## M3–M4: Method Lab and the shipped matcher
+
+```bash
+.venv/bin/python -m bench.run --reuse --stages text,templating,actions,fusion,cluster,replay
+.venv/bin/python -m bench.select && .venv/bin/python -m bench.export_extras
+.venv/bin/python -m bench.validate_runtime     # real hooks vs lab simulation, tolerance 0.05
+.venv/bin/python -m bench.report               # docs/benchmarks/README.md
+python3 -m bench.replay --quick --min-precision 0.9 --min-recall 0.6   # the CI check, stdlib only
+```
+
+Background tier: `scripts/skill-spotter train` runs the job synchronously and prints its summary.
+`scripts/skill-spotter extras` installs the optional dependencies (asks first; about 400 MB).
+
+## M5: workflows and shell history
+
+- Do the same three prompts in a row (e.g. list merged PRs → write the changelog entry → open the release PR) in three sessions. After the third session's last step, one suggestion appears: `You've done this 3-step workflow in 3 sessions (workflow wN: …)`. No step is suggested on its own.
+- `scripts/skill-spotter show wN` lists the steps; `/skill-spotter:draft wN` writes one skill that runs them in order.
+- `scripts/skill-spotter scan-shell --project .` imports your zsh/bash history for this project (local only; re-running adds nothing new).
+
+## M6: skill verification
+
+```bash
+scripts/skill-spotter verify path/to/.claude/skills/<name>/SKILL.md --n 4      # ~9 Haiku calls
+scripts/skill-spotter verify --revise                                           # all skills it created
+```
+
+Manual-only skills are skipped (their quality signal is `used` events). `/skill-spotter:status` shows `trigger F1 0.80 (8 prompts)` next to verified skills.
+
+## M7: mod band
+
+Requires Claude Code v2.1.287+ (`claude --version`). Load with `claude --plugin-dir .`, repeat a task until a suggestion is due: instead of the `[skill-spotter] …` notice, a band above the prompt shows `skill-spotter: You've done this 3 times  [Create /name] [Not now]`. Create fills the prompt with `/skill-spotter:draft pN`; Not now snoozes the pattern. On older versions the module doesn't load and the notice appears as before. `claude plugin validate .` lists the module's hooks and calls.

@@ -93,6 +93,15 @@ def on_turn_end(event: Event) -> Optional[str]:
                 text = suggest.maybe_suggest(conn, pattern_id, session_id, now)
         if text is None:  # patterns the background job marked ready in this project
             text = suggest.suggest_ready(conn, project_key, session_id, now)
+        band = conn.execute(
+            "SELECT band_active FROM session_meta WHERE session_id = ?", (session_id,)
+        ).fetchone()
+        if text and band and band[0]:
+            # The skill-spotter mod draws this as a band with buttons (M7); no systemMessage.
+            from . import band as band_mod
+
+            band_mod.queue(conn, session_id, text)
+            text = None
         if text and _suggest_via(conn) == "claude":
             conn.execute(
                 "UPDATE session_meta SET pending_context = ? WHERE session_id = ?",
