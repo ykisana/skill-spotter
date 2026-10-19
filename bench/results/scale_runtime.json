@@ -1,0 +1,11 @@
+{
+ "turns": 10000,
+ "actions": 103601,
+ "patterns": 9162,
+ "db_mb": 74.2,
+ "build_seconds": 1792.4,
+ "stop_p50_ms": 289.3,
+ "stop_p95_ms": 750.1,
+ "load_avg": 260,
+ "empty_db_p50_ms": 173.0
+}

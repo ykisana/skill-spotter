@@ -101,6 +101,7 @@ def runtime_scale(n_turns: int) -> dict:
             "build_seconds": round(build_s, 1),
             "stop_p50_ms": round(statistics.median(samples), 1),
             "stop_p95_ms": round(statistics.quantiles(samples, n=20)[18], 1),
+            "load_avg": round(os.getloadavg()[0]),
         }
 
 

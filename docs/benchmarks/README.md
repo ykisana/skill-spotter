@@ -169,6 +169,10 @@ Can the matcher find an earlier turn of the same task? Recall@10 on test, latenc
 | faiss_hnsw | 0.848 | 0.056 | 0.107 |
 | sqlite_vec | – | this Python's sqlite3 can't load extensions (python.org macOS builds); not measured | |
 
+## Scale (runtime)
+
+10,000 turns / 103,601 actions / 9,162 patterns in one database (74.2 MB, built in 1792.4 s). Stop hook with that database: p50 289.3 ms, p95 750.1 ms. Measured at a 1-minute load average of 260; under the same load the Stop hook with an empty database took 173.0 ms (p50), so most of this is machine load, not database size.
+
 ## Naming
 
 Judge scores (1-5, blind, Claude Sonnet) over 38 test families: runtime heuristic 2.66 (0.368 rated 4+), Claude reference 4.84. Exact match 0.158. Local LLM: not evaluated (no Ollama/llama.cpp; disk nearly full). Claude refines the name when drafting, so the heuristic only needs to be a sensible default.

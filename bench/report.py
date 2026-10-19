@@ -295,6 +295,12 @@ def main():
             f"({r['db_mb']} MB, built in {r['build_seconds']} s). Stop hook with that database: "
             f"p50 {r['stop_p50_ms']} ms, p95 {r['stop_p95_ms']} ms.",
         ]
+        if r.get("load_avg"):
+            lines[-1] += (
+                f" Measured at a 1-minute load average of {r['load_avg']}; under the same load the"
+                f" Stop hook with an empty database took {r.get('empty_db_p50_ms', '?')} ms (p50),"
+                " so most of this is machine load, not database size."
+            )
     naming = RESULTS / "naming.json"
     if naming.exists():
         s = json.loads(naming.read_text())["summary"]
