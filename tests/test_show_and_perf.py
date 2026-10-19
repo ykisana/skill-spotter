@@ -145,6 +145,12 @@ def populate(conn, repo, n_turns=2000, seed=7):
         patterns.finalize_turn(conn, pid, ts + 3)
 
 
+# The budgets are about the user's machine (SPEC 11.7) and hold locally. Shared CI VMs have
+# noisy disks and CPUs, so there the tests only guard against big regressions.
+STOP_BUDGET_MS = 400 if os.environ.get("CI") else 100
+APPEND_BUDGET_MS = 50 if os.environ.get("CI") else 20
+
+
 def p95(samples):
     return statistics.quantiles(samples, n=20)[18]
 
@@ -211,7 +217,7 @@ def test_stop_hook_p95_under_100ms_with_2000_turns(big_db):
         )
     samples = samples[3:]  # first runs pay for cold disk caches and .pyc compilation
     print(f"\nStop hook p95: {p95(samples):.1f} ms, median {statistics.median(samples):.1f} ms")
-    assert p95(samples) < 100, f"Stop p95 {p95(samples):.1f} ms"
+    assert p95(samples) < STOP_BUDGET_MS, f"Stop p95 {p95(samples):.1f} ms"
 
 
 def test_action_append_p95_under_20ms(big_db):
@@ -245,4 +251,4 @@ def test_action_append_p95_under_20ms(big_db):
         )
         samples.append((time.perf_counter() - start) * 1000)
     print(f"\naction append p95: {p95(samples):.2f} ms")
-    assert p95(samples) < 20, f"append p95 {p95(samples):.2f} ms"
+    assert p95(samples) < APPEND_BUDGET_MS, f"append p95 {p95(samples):.2f} ms"

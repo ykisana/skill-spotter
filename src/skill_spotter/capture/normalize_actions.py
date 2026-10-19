@@ -297,7 +297,9 @@ def _bash_action(command: str) -> Action:
         summary=redact(command)[:500],
         danger=any(p["danger"] for p in parsed),
         low=not meaningful,
-        values=[redact(v) for p in (meaningful or parsed) for v in p["values"] if _param_like(v)][:20],
+        values=[redact(v) for p in (meaningful or parsed) for v in p["values"] if _param_like(v)][
+            :20
+        ],
     )
     return action
 
