@@ -7,7 +7,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_prompt.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_prompt.py"],
             "timeout": 5
           }
         ]
@@ -19,7 +19,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_action.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_action.py"],
             "async": true
           }
         ]
@@ -31,7 +31,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_action.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_action.py"],
             "async": true
           }
         ]
@@ -43,7 +43,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_stop.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_stop.py"],
             "timeout": 5
           }
         ]
@@ -56,7 +56,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_config_change.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_config_change.py"],
             "timeout": 5
           }
         ]
@@ -68,7 +68,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_expansion.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_expansion.py"],
             "timeout": 5
           }
         ]
@@ -80,7 +80,7 @@
           {
             "type": "command",
             "command": "python3",
-            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/on_session_end.py"],
+            "args": ["-S", "${CLAUDE_PLUGIN_ROOT}/hooks/on_session_end.py"],
             "timeout": 1
           }
         ]

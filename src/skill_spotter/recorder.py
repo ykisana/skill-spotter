@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sqlite3
+import zlib
 from typing import Any, Dict, List, Optional
 
 from . import project
@@ -17,7 +17,9 @@ REPEAT_WINDOW = 600  # seconds
 
 
 def _hash(text: str) -> str:
-    return hashlib.sha1(text.encode("utf-8", "replace")).hexdigest()
+    """Cheap fingerprint for spotting exact repeats (zlib imports much faster than hashlib)."""
+    data = text.encode("utf-8", "replace")
+    return f"{zlib.crc32(data):08x}{zlib.adler32(data):08x}{len(data):x}"
 
 
 def _session_meta(conn: sqlite3.Connection, session_id: str) -> Optional[sqlite3.Row]:

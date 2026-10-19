@@ -217,7 +217,8 @@ def test_hooks_use_exec_form_and_existing_scripts():
     for _event, _group, hook in hook_entries():
         assert hook["type"] == "command"
         assert hook["command"] == "python3"
-        (script,) = hook["args"]
+        flag, script = hook["args"]
+        assert flag == "-S"  # no site-packages: hooks are stdlib-only and start faster
         assert script.startswith("${CLAUDE_PLUGIN_ROOT}/hooks/")
         assert (ROOT / script.replace("${CLAUDE_PLUGIN_ROOT}/", "")).is_file()
 

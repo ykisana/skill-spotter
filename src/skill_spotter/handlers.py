@@ -37,6 +37,7 @@ def on_prompt(event: Event) -> Optional[Dict[str, str]]:
 
     Returns ``{"context": text}`` only in the opt-in ``suggest_via = claude`` mode, to hand
     Claude a suggestion queued at the end of the previous turn."""
+
     conn = _connect()
     try:
         now = time.time()
@@ -59,6 +60,7 @@ def on_prompt(event: Event) -> Optional[Dict[str, str]]:
 
 def on_action(event: Event) -> None:
     """A tool call finished. Extra: ``tool_name``, ``tool_input``, ``tool_use_id``, ``failed``."""
+
     conn = _connect()
     try:
         recorder.record_action(conn, event, time.time())
@@ -69,6 +71,7 @@ def on_action(event: Event) -> None:
 def on_turn_end(event: Event) -> Optional[str]:
     """Claude finished responding. Extra: ``scheduled_prompts``.
     Returns suggestion text to show the user, or None."""
+
     text = None
     conn = _connect()
     try:
