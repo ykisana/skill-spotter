@@ -5,17 +5,17 @@ Handlers receive an ``Event`` (a plain dict built by an editor adapter such as
 Every event has ``editor``, ``kind``, ``session_id``, ``prompt_id``, ``cwd`` and
 ``agent_id``; each handler's docstring lists the extra fields it gets.
 
-M1: prompts, actions and turn ends are recorded and matched. The lifecycle (acceptance,
-usage, snoozing) arrives in M2.
+Each handler imports what its event needs inside the function: hooks start a fresh
+process every time, and import time is most of a hook's cost. ``test_lazy_imports``
+keeps it that way.
 """
 
 from __future__ import annotations
 
 import os
-import time
 from typing import Any, Dict, Optional
 
-from . import paths, patterns, recorder, store, suggest
+from . import clock, paths, store
 
 Event = Dict[str, Any]
 
@@ -37,11 +37,11 @@ def on_prompt(event: Event) -> Optional[Dict[str, str]]:
 
     Returns ``{"context": text}`` only in the opt-in ``suggest_via = claude`` mode, to hand
     Claude a suggestion queued at the end of the previous turn."""
+    from . import recorder
 
     conn = _connect()
     try:
-        now = time.time()
-        recorder.record_prompt(conn, event, now)
+        recorder.record_prompt(conn, event, clock.now())
         if _suggest_via(conn) != "claude" or not event.get("session_id"):
             return None
         row = conn.execute(
@@ -60,10 +60,11 @@ def on_prompt(event: Event) -> Optional[Dict[str, str]]:
 
 def on_action(event: Event) -> None:
     """A tool call finished. Extra: ``tool_name``, ``tool_input``, ``tool_use_id``, ``failed``."""
+    from . import recorder
 
     conn = _connect()
     try:
-        recorder.record_action(conn, event, time.time())
+        recorder.record_action(conn, event, clock.now())
     finally:
         conn.close()
 
@@ -71,20 +72,19 @@ def on_action(event: Event) -> None:
 def on_turn_end(event: Event) -> Optional[str]:
     """Claude finished responding. Extra: ``scheduled_prompts``.
     Returns suggestion text to show the user, or None."""
+    from . import lifecycle, patterns, project, recorder, suggest
 
     text = None
     conn = _connect()
     try:
-        now = time.time()
+        now = clock.now()
         session_id = event.get("session_id") or ""
         recorder.remember_scheduled_prompts(
             conn, session_id, event.get("scheduled_prompts") or [], now
         )
-        pattern_id = (
-            patterns.finalize_turn(conn, event["prompt_id"], now)
-            if event.get("prompt_id")
-            else None
-        )
+        prompt_id = event.get("prompt_id")
+        pattern_id = patterns.finalize_turn(conn, prompt_id, now) if prompt_id else None
+        lifecycle.scan_for_created_skills(conn, project.project_key(event.get("cwd")), now)
         if pattern_id is not None:
             text = suggest.maybe_suggest(conn, pattern_id, session_id, now)
         if text and _suggest_via(conn) == "claude":
@@ -93,6 +93,7 @@ def on_turn_end(event: Event) -> Optional[str]:
                 (suggest.context_text(text), session_id),
             )
             text = None
+        lifecycle.maybe_prune(conn, now)
     finally:
         conn.close()
     if text is None and os.environ.get(DEBUG_SUGGEST_ENV) == "1":
@@ -104,18 +105,38 @@ def on_turn_end(event: Event) -> Optional[str]:
 
 
 def on_skill_change(event: Event) -> None:
-    """A skill file was created or edited. Extra: ``file_path``.
-    (M2: mark the matching pattern accepted.)"""
-    return None
+    """A skill file was created or edited. Extra: ``file_path``."""
+    from . import lifecycle, project
+
+    conn = _connect()
+    try:
+        lifecycle.skill_file_changed(
+            conn, event.get("file_path"), project.project_key(event.get("cwd")), clock.now()
+        )
+    finally:
+        conn.close()
 
 
 def on_command_used(event: Event) -> None:
     """The user typed a slash command. Extra: ``command_name``, ``command_args``,
-    ``command_source``. (M2: log use of skills we suggested.)"""
-    return None
+    ``command_source``."""
+    from . import lifecycle
+
+    conn = _connect()
+    try:
+        lifecycle.command_used(
+            conn, event.get("command_name"), event.get("session_id"), clock.now()
+        )
+    finally:
+        conn.close()
 
 
 def on_session_end(event: Event) -> None:
-    """The session ended. Extra: ``reason``. Must be fast: ~1 s budget.
-    (M2: snooze suggestions the user didn't act on.)"""
-    return None
+    """The session ended. Extra: ``reason``. Must be fast: ~1 s budget."""
+    from . import lifecycle
+
+    conn = _connect()
+    try:
+        lifecycle.snooze_unanswered(conn, event.get("session_id"), clock.now())
+    finally:
+        conn.close()

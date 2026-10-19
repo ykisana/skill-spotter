@@ -16,9 +16,6 @@ from . import __version__, lifecycle, paths, report, store
 
 # Subcommands from SPEC section 12 that later milestones implement.
 PLANNED = {
-    "dismiss": "M2",
-    "snooze": "M2",
-    "stats": "M2",
     "train": "M4",
     "extras": "M4",
 }
@@ -47,6 +44,16 @@ def build_parser() -> argparse.ArgumentParser:
     accept = sub.add_parser("accept", help="record that a pattern was saved as a skill")
     accept.add_argument("pattern", help="pattern id, e.g. p42")
     accept.add_argument("skill_path", help="path of the SKILL.md that was written")
+
+    dismiss = sub.add_parser("dismiss", help="never suggest this pattern again")
+    dismiss.add_argument("pattern", help="pattern id, e.g. p42")
+
+    snooze = sub.add_parser("snooze", help="don't suggest this pattern for a while")
+    snooze.add_argument("pattern", help="pattern id, e.g. p42")
+    snooze.add_argument("--days", type=float, default=14, help="how long (default 14)")
+
+    stats = sub.add_parser("stats", help="suggestions shown, accepted %%, skills used")
+    stats.add_argument("--json", action="store_true", help="machine-readable output")
 
     sub.add_parser("on", help="resume suggestions")
     sub.add_parser("off", help="pause suggestions")
@@ -93,6 +100,10 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_show(conn, args.pattern, as_json=args.json)
         if args.command == "accept":
             return cmd_accept(conn, args.pattern, args.skill_path)
+        if args.command in ("dismiss", "snooze"):
+            return cmd_dismiss_or_snooze(conn, args)
+        if args.command == "stats":
+            return cmd_stats(conn, as_json=args.json)
         if args.command in ("on", "off"):
             store.set_setting(conn, "enabled", "1" if args.command == "on" else "0")
             state = "on" if args.command == "on" else "paused"
@@ -112,8 +123,9 @@ def cmd_status(conn: sqlite3.Connection, base: Path, *, as_json: bool) -> int:
     patterns = [
         dict(row)
         for row in conn.execute(
-            "SELECT id, project_key, count, session_count, state, suggested_name, skill_path "
-            "FROM patterns WHERE state != 'dismissed' "
+            "SELECT id, project_key, count, session_count, state, suggested_name, skill_path, "
+            "(SELECT COUNT(*) FROM events e WHERE e.pattern_id = patterns.id AND e.type = 'used') "
+            "AS uses FROM patterns WHERE state != 'dismissed' "
             "ORDER BY count DESC, last_seen DESC LIMIT 20"
         )
     ]
@@ -130,9 +142,10 @@ def cmd_status(conn: sqlite3.Connection, base: Path, *, as_json: bool) -> int:
         print("skill-spotter patterns:")
         for p in patterns:
             name = f"/{p['suggested_name']}" if p["suggested_name"] else "(unnamed)"
+            used = f"  used {p['uses']}x" if p["state"] == "accepted" else ""
             print(
                 f"  p{p['id']:<5} {name:<24} {p['count']}x in {p['session_count']} sessions"
-                f"  [{p['state']}]"
+                f"  [{p['state']}]{used}"
             )
     print(
         f"Suggestions: {'on' if enabled else 'paused'} · turns recorded: {counts['turns']}"
@@ -174,6 +187,44 @@ def cmd_accept(conn: sqlite3.Connection, pattern: str, skill_path: str) -> int:
         print(f"skill-spotter: no pattern p{pattern_id}.", file=sys.stderr)
         return 1
     print(f"skill-spotter: p{pattern_id} saved as {path}.")
+    return 0
+
+
+def cmd_dismiss_or_snooze(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    pattern_id = _pattern_or_error(args.pattern)
+    if pattern_id is None:
+        return 2
+    now = time.time()
+    if args.command == "dismiss":
+        ok = lifecycle.dismiss(conn, pattern_id, now)
+        done = f"p{pattern_id} dismissed; it won't be suggested again."
+    else:
+        ok = lifecycle.snooze(conn, pattern_id, args.days, now)
+        done = f"p{pattern_id} snoozed for {args.days:g} days."
+    if not ok:
+        print(
+            f"skill-spotter: no pattern p{pattern_id} (or it's already a skill).", file=sys.stderr
+        )
+        return 1
+    print(f"skill-spotter: {done}")
+    return 0
+
+
+def cmd_stats(conn: sqlite3.Connection, *, as_json: bool) -> int:
+    data = lifecycle.stats(conn)
+    if as_json:
+        print(json.dumps(data, indent=2))
+        return 0
+    pct = "n/a" if data["accepted_pct"] is None else f"{data['accepted_pct']:g}%"
+    print(
+        f"turns recorded: {data['turns_recorded']} · patterns: {data['patterns']}\n"
+        f"suggestions shown: {data['suggestions_shown']} "
+        f"({data['patterns_suggested']} patterns)\n"
+        f"accepted: {data['accepted']} ({pct}) · snoozed: {data['snoozed']} · "
+        f"dismissed: {data['dismissed']}\n"
+        f"skills used at least once: {data['skills_used_at_least_once']} "
+        f"({data['skill_uses']} uses)"
+    )
     return 0
 
 
