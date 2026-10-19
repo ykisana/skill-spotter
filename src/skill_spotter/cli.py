@@ -67,7 +67,15 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "forget":
         return cmd_forget(base, assume_yes=args.yes)
 
-    conn = store.connect(paths.db_path(base))
+    try:
+        conn = store.connect(paths.db_path(base))
+    except (sqlite3.DatabaseError, RuntimeError) as exc:
+        print(
+            f"skill-spotter: can't open the database in {base}: {exc}\n"
+            "Run `skill-spotter forget` (or /skill-spotter:forget) to start fresh.",
+            file=sys.stderr,
+        )
+        return 1
     try:
         if args.command == "status":
             return cmd_status(conn, base, as_json=args.json)

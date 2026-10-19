@@ -83,6 +83,15 @@ def test_unusable_data_dir_fails_open(script, tmp_path):
     assert result.stdout == ""
 
 
+@pytest.mark.parametrize("name,script", sorted(FIXTURE_SCRIPTS.items()))
+def test_corrupt_database_fails_open(name, script, isolated_data_dir):
+    isolated_data_dir.mkdir(parents=True)
+    (isolated_data_dir / "skill-spotter.db").write_bytes(b"this is not sqlite" * 100)
+    result = run_hook(script, fixture(name), isolated_data_dir)
+    assert result.returncode == 0
+    assert result.stdout == ""
+
+
 def test_debug_suggestion_is_a_system_message(isolated_data_dir):
     env = {handlers.DEBUG_SUGGEST_ENV: "1"}
     result = run_hook("on_stop.py", fixture("stop"), isolated_data_dir, env)

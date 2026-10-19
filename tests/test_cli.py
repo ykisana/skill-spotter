@@ -68,3 +68,12 @@ def test_bin_shim_runs():
     )
     assert result.returncode == 0, result.stderr
     assert "no patterns yet" in result.stdout
+
+
+def test_corrupt_database_gives_a_clear_error(isolated_data_dir, capsys):
+    isolated_data_dir.mkdir(parents=True)
+    (isolated_data_dir / "skill-spotter.db").write_bytes(b"this is not sqlite" * 100)
+    assert cli.main(["status"]) == 1
+    err = capsys.readouterr().err
+    assert "can't open the database" in err
+    assert "forget" in err
