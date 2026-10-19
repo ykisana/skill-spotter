@@ -1,0 +1,18 @@
+{
+  "fusion": "gbt",
+  "text": "jina_small",
+  "actions": "hier_jaccard_noidf[hand]",
+  "clusterer": "leader",
+  "theta": 0.9,
+  "track": "extras",
+  "method_version": "extras-2026-10-19",
+  "evidence": {
+    "precision": 1.0,
+    "recall": 1.0,
+    "median_occurrences_before_first": 3,
+    "false_per_100_turns": 0.0,
+    "duplicate_suggestions": 1
+  },
+  "selected_from_run": "2026-10-19T12:28:29",
+  "real_holdout": "pending: run bench.label export/pairs/label/eval (SPEC 11.5)"
+}

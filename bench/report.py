@@ -84,6 +84,70 @@ def tier_table(rows, stage, method):
     return out
 
 
+def extra_sections(rows):
+    """Ablation (what each change did), the M4 runtime check, and M5 sequence mining."""
+    lines = []
+    chosen = RESULTS / "runtime_chosen.json"
+    sweep = RESULTS / "sweep.json"
+    lines += [
+        "",
+        "## Ablation: what each change did (real-hook replay)",
+        "",
+        "| matcher | dev P | dev R | test P | test R | test false / 100 turns |",
+        "|---|---|---|---|---|---|",
+        "| rule, M1 baseline (before ADR 0006) | 0.651 | 0.883 | 0.671 | 0.868 | 1.07 |",
+    ]
+    base = {
+        r["split"]: r
+        for r in rows
+        if r.get("stage") == "replay" and r.get("method") == "runtime<baseline>"
+    }
+    if base:
+        lines.append(
+            f"| + meaningful-only actions, text gate, no double suggestions | {fmt(base['dev']['precision'])} | "
+            f"{fmt(base['dev']['recall'])} | {fmt(base['test']['precision'])} | {fmt(base['test']['recall'])} | "
+            f"{fmt(base['test']['false_per_100_turns'])} |"
+        )
+    if sweep.exists():
+        sw = json.loads(sweep.read_text())
+        b, t = sw["best"], sw["test_of_best"]
+        lines.append(
+            f"| + swept rule `{json.dumps(b['params'])}` | {fmt(b['precision'])} | {fmt(b['recall'])} | "
+            f"{fmt(t['precision'])} | {fmt(t['recall'])} | {fmt(t['false_per_100_turns'])} |"
+        )
+    if chosen.exists():
+        c = json.loads(chosen.read_text())
+        lines.append(
+            f"| **chosen: logreg fusion + leader (runtime)** | {fmt(c['dev']['runtime']['precision'])} | "
+            f"{fmt(c['dev']['runtime']['recall'])} | {fmt(c['test']['runtime']['precision'])} | "
+            f"{fmt(c['test']['runtime']['recall'])} | {fmt(c['test']['runtime']['false_per_100_turns'])} |"
+        )
+        lines += [
+            "",
+            "M4 check, the shipped runtime vs the lab's simulation of the same method (tolerance 0.05): "
+            f"dev difference {c['dev']['difference']}, test difference {c['test']['difference']}.",
+        ]
+    seqs = RESULTS / "sequences.json"
+    if seqs.exists():
+        d = json.loads(seqs.read_text())
+        lines += [
+            "",
+            "## Multi-turn workflow mining (M5)",
+            "",
+            f"{len(d['planted'])} planted workflows (2-4 steps, 3-6 sessions each, noise turns between "
+            f"steps) among {d['sessions']} sessions. Found = reported as a frequent sequence (support >= 3).",
+            "",
+            "| method | found | recall | false workflows | reported | seconds |",
+            "|---|---|---|---|---|---|",
+        ]
+        for r in d["results"]:
+            lines.append(
+                f"| {r['method']} | {r['found']}/{r['planted']} | {fmt(r['recall'])} | "
+                f"{r['false_workflows']} | {r['reported']} | {fmt(r['seconds'])} |"
+            )
+    return lines
+
+
 def main():
     DOCS.mkdir(parents=True, exist_ok=True)
     rows = [json.loads(line) for line in (RESULTS / "results.jsonl").read_text().splitlines()]
@@ -214,6 +278,9 @@ def main():
             "|---|---|---|---|",
         ]
         for r in data.get("lookup", []):
+            if "error" in r:
+                lines.append(f"| {r['method']} | – | {r['error']} | |")
+                continue
             lines.append(
                 f"| {r['method']} | {fmt(r['recall@10'])} | {fmt(r['p50_ms'])} | {fmt(r['p95_ms'])} |"
             )
@@ -240,6 +307,7 @@ def main():
             f"Exact match {fmt(s['exact_match'])}. Local LLM: {s['local_llm']}. Claude refines the name when "
             "drafting, so the heuristic only needs to be a sensible default.",
         ]
+    lines += extra_sections(rows)
     for name, title in (
         ("method.json", "Chosen: stdlib (online tier)"),
         ("method.extras.json", "Chosen: with extras (background tier)"),

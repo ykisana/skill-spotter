@@ -236,3 +236,26 @@ class FileSet(ActionRep):
     def score(self, a, b):
         fa, fb = self._files(a), self._files(b)
         return len(fa & fb) / len(fa | fb) if fa and fb else 0.0
+
+
+@register("actions", "hier_jaccard_meaningful")
+class HierJaccardMeaningful(ActionRep):
+    """No IDF; only meaningful tokens (weight >= 0.25) count. Turns without meaningful
+    actions score 0, so text decides for them (ADR 0006)."""
+
+    name = "hier_jaccard_meaningful"
+
+    def score(self, a, b):
+        fa = baseline.meaningful(fingerprint(a, self.templater))
+        fb = baseline.meaningful(fingerprint(b, self.templater))
+        return baseline.weighted_jaccard(fa, fb, lambda t: 1.0)
+
+
+@register("actions", "hier_idf_jaccard_meaningful")
+class HierIdfJaccardMeaningful(HierIdfJaccard):
+    name = "hier_idf_jaccard_meaningful"
+
+    def score(self, a, b):
+        fa = baseline.meaningful(fingerprint(a, self.templater))
+        fb = baseline.meaningful(fingerprint(b, self.templater))
+        return baseline.weighted_jaccard(fa, fb, lambda t: self.weight.get(t, self.default))

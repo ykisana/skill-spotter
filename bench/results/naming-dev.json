@@ -1,0 +1,433 @@
+{
+ "summary": {
+  "families": 60,
+  "heuristic_mean": 2.47,
+  "claude_mean": 4.75,
+  "exact_match": 0.1,
+  "heuristic_ge4": 0.25,
+  "local_llm": "not evaluated (no Ollama/llama.cpp; disk nearly full)",
+  "split": "dev"
+ },
+ "rows": [
+  {
+   "family": "f001",
+   "heuristic": "git-push",
+   "claude": "open-pr",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f002",
+   "heuristic": "rebase-conflicts",
+   "claude": "rebase-branch",
+   "score_claude": 4,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f003",
+   "heuristic": "git-push",
+   "claude": "cherry-pick-hotfix",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f004",
+   "heuristic": "fix-push",
+   "claude": "address-review",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f006",
+   "heuristic": "cut-tag",
+   "claude": "cut-release",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f007",
+   "heuristic": "gh-pr-view",
+   "claude": "assign-reviewers",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f010",
+   "heuristic": "build-pypi",
+   "claude": "publish-package",
+   "score_heuristic": 3,
+   "score_claude": 5
+  },
+  {
+   "family": "f011",
+   "heuristic": "tag-release-github",
+   "claude": "create-github-release",
+   "score_heuristic": 4,
+   "score_claude": 5
+  },
+  {
+   "family": "f012",
+   "heuristic": "cut-main-release",
+   "claude": "cut-release-branch",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f013",
+   "heuristic": "agvtool",
+   "claude": "testflight-build",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f014",
+   "heuristic": "git-tag",
+   "claude": "backport-fix",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f015",
+   "heuristic": "git-commit",
+   "claude": "fix-flaky-test",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f016",
+   "heuristic": "rerun-failed",
+   "claude": "rerun-ci",
+   "score_heuristic": 4,
+   "score_claude": 5
+  },
+  {
+   "family": "f017",
+   "heuristic": "pytest",
+   "claude": "improve-coverage",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f020",
+   "heuristic": "pytest",
+   "claude": "bisect-regression",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f025",
+   "heuristic": "git-tag",
+   "claude": "canary-deploy",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f026",
+   "heuristic": "git-pull",
+   "claude": "run-migration",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f027",
+   "heuristic": "curl",
+   "claude": "smoke-test",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f029",
+   "heuristic": "alembic",
+   "claude": "generate-migration",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f030",
+   "heuristic": "psql",
+   "claude": "run-migrations",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f032",
+   "heuristic": "reset-local",
+   "claude": "reset-db",
+   "score_claude": 4,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f033",
+   "heuristic": "write-backfill",
+   "claude": "backfill-column",
+   "score_claude": 4,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f037",
+   "heuristic": "xcrun",
+   "claude": "reproduce-crash",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f038",
+   "heuristic": "ab",
+   "claude": "profile-endpoint",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f039",
+   "heuristic": "kubectl-logs",
+   "claude": "investigate-oom",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f041",
+   "heuristic": "check-sentry",
+   "claude": "investigate-errors",
+   "score_claude": 5,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f042",
+   "heuristic": "check-slow-query",
+   "claude": "find-slow-query",
+   "score_heuristic": 4,
+   "score_claude": 5
+  },
+  {
+   "family": "f043",
+   "heuristic": "update-openapi",
+   "claude": "document-endpoint",
+   "score_claude": 5,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f045",
+   "heuristic": "update-changelog",
+   "claude": "update-changelog",
+   "score_claude": 4,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f046",
+   "heuristic": "add-docstrings",
+   "claude": "add-docstrings",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f047",
+   "heuristic": "update-readme",
+   "claude": "update-tf-docs",
+   "score_heuristic": 3,
+   "score_claude": 5
+  },
+  {
+   "family": "f048",
+   "heuristic": "update-env",
+   "claude": "update-env-docs",
+   "score_claude": 3,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f050",
+   "heuristic": "psql",
+   "claude": "weekly-report",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f051",
+   "heuristic": "python",
+   "claude": "audit-data-quality",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f053",
+   "heuristic": "psql",
+   "claude": "export-query",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f054",
+   "heuristic": "psql",
+   "claude": "analyze-ab-test",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f056",
+   "heuristic": "validate-backfill",
+   "claude": "validate-backfill",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f057",
+   "heuristic": "rotate-restart",
+   "claude": "rotate-secret",
+   "score_claude": 3,
+   "score_heuristic": 5
+  },
+  {
+   "family": "f058",
+   "heuristic": "terraform-init",
+   "claude": "terraform-apply",
+   "score_heuristic": 2,
+   "score_claude": 4
+  },
+  {
+   "family": "f059",
+   "heuristic": "kubectl-rollout-status",
+   "claude": "fix-crashloop",
+   "score_claude": 4,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f060",
+   "heuristic": "build-push",
+   "claude": "deploy-image",
+   "score_claude": 3,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f062",
+   "heuristic": "bump-chart",
+   "claude": "bump-helm-release",
+   "score_heuristic": 4,
+   "score_claude": 4
+  },
+  {
+   "family": "f065",
+   "heuristic": "diff-review",
+   "claude": "security-review-pr",
+   "score_claude": 5,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f068",
+   "heuristic": "npm-ci",
+   "claude": "fix-pr-ci",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f069",
+   "heuristic": "gh-pr-diff",
+   "claude": "review-migration",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f072",
+   "heuristic": "pytest",
+   "claude": "patch-vulnerability",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f074",
+   "heuristic": "go-mod",
+   "claude": "update-go-deps",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f075",
+   "heuristic": "bump-base-image",
+   "claude": "bump-base-image",
+   "score_heuristic": 4,
+   "score_claude": 4
+  },
+  {
+   "family": "f077",
+   "heuristic": "sync-reqwest",
+   "claude": "align-crate-version",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f078",
+   "heuristic": "scaffold-endpoint",
+   "claude": "scaffold-endpoint",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f079",
+   "heuristic": "scaffold-fraud-detector",
+   "claude": "scaffold-microservice",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f081",
+   "heuristic": "scaffold-subcommand",
+   "claude": "scaffold-subcommand",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f083",
+   "heuristic": "pnpm-test",
+   "claude": "scaffold-worker",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f084",
+   "heuristic": "scaffold-module",
+   "claude": "scaffold-tf-module",
+   "score_heuristic": 4,
+   "score_claude": 5
+  },
+  {
+   "family": "f085",
+   "heuristic": "add-release-testflight",
+   "claude": "release-testflight",
+   "score_heuristic": 3,
+   "score_claude": 5
+  },
+  {
+   "family": "f087",
+   "heuristic": "fix-signing",
+   "claude": "fix-code-signing",
+   "score_claude": 5,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f090",
+   "heuristic": "fastlane-frameit",
+   "claude": "capture-screenshots",
+   "score_heuristic": 3,
+   "score_claude": 4
+  },
+  {
+   "family": "f091",
+   "heuristic": "bump-build",
+   "claude": "cut-app-release",
+   "score_heuristic": 3,
+   "score_claude": 5
+  },
+  {
+   "family": "f096",
+   "heuristic": "git-fetch",
+   "claude": "start-jira-ticket",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f097",
+   "heuristic": "get-page",
+   "claude": "spec-to-linear",
+   "score_heuristic": 1,
+   "score_claude": 5
+  }
+ ]
+}

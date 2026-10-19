@@ -15,10 +15,31 @@ from skill_spotter.match import baseline
 
 from .base import register
 
-FEATURES = ["text", "action", "seq", "files", "n_min", "n_max", "same_session", "log_gap_days"]
+FEATURES = [
+    "text",
+    "action",
+    "seq",
+    "files",
+    "n_min",
+    "n_max",
+    "same_session",
+    "log_gap_days",
+    "action_x_text",
+    "few_actions",
+]
+
+
+def derived(cols: Dict[str, np.ndarray]) -> Dict[str, np.ndarray]:
+    """Interaction features: action similarity means more when text agrees, and turns with
+    few meaningful actions need text (mirrored in skill_spotter.match.fused)."""
+    cols = dict(cols)
+    cols["action_x_text"] = cols["action"] * cols["text"]
+    cols["few_actions"] = (cols["n_min"] < 3).astype(float)
+    return cols
 
 
 def feature_matrix(cols: Dict[str, np.ndarray]) -> np.ndarray:
+    cols = derived(cols)
     return np.column_stack([cols[f] for f in FEATURES])
 
 

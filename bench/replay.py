@@ -79,7 +79,22 @@ def summarize(turns, suggestions, seconds) -> Dict[str, float]:
             100 * (len(suggestions) - len(correct)) / max(1, len(turns)), 3
         ),
         "duplicate_suggestions": duplicates,
+        **_fragmentation(correct),
         "seconds": round(seconds, 1),
+    }
+
+
+def _fragmentation(correct) -> Dict[str, int]:
+    """Split duplicates: the same pattern suggested again after a snooze (by design) vs
+    a second pattern for an already suggested family (the matcher split the task)."""
+    if not correct or "pattern" not in correct[0]:
+        return {}
+    by_fam = defaultdict(list)
+    for s in correct:
+        by_fam[s["family"]].append(s["pattern"])
+    return {
+        "resuggested_after_snooze": sum(len(p) - len(set(p)) for p in by_fam.values()),
+        "extra_patterns_per_family": sum(len(set(p)) - 1 for p in by_fam.values()),
     }
 
 
@@ -161,6 +176,7 @@ def replay_runtime(turns: List[D.Turn], settings: Optional[Dict[str, str]] = Non
                             "size": len(members),
                             "occurrence": _occurrence(seen, fam),
                             "message": msg,
+                            "members": [m.item_id for m in members],
                         }
                     )
                 if last_in_session[t.session] == t.idx:
@@ -254,6 +270,7 @@ def replay_sim(
     pattern_of: Dict[int, int] = {}
     index: Dict[tuple, set] = defaultdict(set)  # (project, key) -> pattern ids
     suggested_sets: List[set] = []
+    suggested_ids: Dict[str, List[int]] = {}
     state = {}  # pattern -> suggested?
     session_suggested, day_count = set(), Counter()
     ready: Dict[str, List[set]] = defaultdict(list)
@@ -286,6 +303,7 @@ def replay_sim(
                 "family": fam,
                 "size": len(members),
                 "occurrence": _occurrence(seen, fam),
+                "members": [turns[m].item_id for m in members],
             }
         )
 
@@ -328,9 +346,20 @@ def replay_sim(
             and not generic(members)
             and can_suggest(t)
         ):
-            state[pid] = True
-            suggested_sets.append(set(members))
-            do_suggest(t, members)
+            twin = None
+            for q in suggested_ids.get(t.project, []):
+                pairs = [(a, b) for a in members[-5:] for b in patterns[q][-5:]]
+                if pairs and sum(scorer.scores(pairs)) / len(pairs) >= theta:
+                    twin = q
+                    break
+            if twin is not None:  # same as the runtime: fold into the pattern already shown
+                patterns[twin].extend(members)
+                state[pid] = True
+            else:
+                state[pid] = True
+                suggested_sets.append(set(members))
+                suggested_ids.setdefault(t.project, []).append(pid)
+                do_suggest(t, members)
         # background tier: re-cluster, mark crossing clusters ready, show at next turn end
         if batch_clusterer is not None:
             if ready[t.project] and can_suggest(t):

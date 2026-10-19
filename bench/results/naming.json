@@ -1,0 +1,279 @@
+{
+ "summary": {
+  "families": 38,
+  "heuristic_mean": 2.66,
+  "claude_mean": 4.84,
+  "exact_match": 0.158,
+  "heuristic_ge4": 0.368,
+  "local_llm": "not evaluated (no Ollama/llama.cpp; disk nearly full)",
+  "split": "test"
+ },
+ "rows": [
+  {
+   "family": "f005",
+   "heuristic": "update-develop",
+   "claude": "sync-branch",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f008",
+   "heuristic": "bump-push-version",
+   "claude": "release-version",
+   "score_claude": 5,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f009",
+   "heuristic": "update-changelog",
+   "claude": "update-changelog",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f018",
+   "heuristic": "test",
+   "claude": "skip-flaky-test",
+   "score_claude": 4,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f019",
+   "heuristic": "update-snapshots",
+   "claude": "update-snapshots",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f021",
+   "heuristic": "gh-run-list",
+   "claude": "shard-tests",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f022",
+   "heuristic": "deploy-staging",
+   "claude": "deploy-staging",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f023",
+   "heuristic": "curl",
+   "claude": "rollback-prod",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f024",
+   "heuristic": "bump-flag",
+   "claude": "bump-feature-flag",
+   "score_claude": 5,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f028",
+   "heuristic": "create-release",
+   "claude": "release-mobile-app",
+   "score_claude": 5,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f031",
+   "heuristic": "revert-back",
+   "claude": "rollback-migration",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f034",
+   "heuristic": "squash-before",
+   "claude": "squash-migrations",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f035",
+   "heuristic": "dump-schema",
+   "claude": "dump-schema",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f036",
+   "heuristic": "kubectl-logs",
+   "claude": "tail-prod-logs",
+   "score_heuristic": 3,
+   "score_claude": 5
+  },
+  {
+   "family": "f040",
+   "heuristic": "run-test",
+   "claude": "debug-flaky-test",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f044",
+   "heuristic": "write-adr",
+   "claude": "write-adr",
+   "score_heuristic": 5,
+   "score_claude": 5
+  },
+  {
+   "family": "f049",
+   "heuristic": "git-add",
+   "claude": "generate-cli-docs",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f052",
+   "heuristic": "python",
+   "claude": "profile-dataset",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f055",
+   "heuristic": "psql",
+   "claude": "build-retention-curve",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f061",
+   "heuristic": "kubectl-apply",
+   "claude": "provision-namespace",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f063",
+   "heuristic": "vault",
+   "claude": "onboard-vault-secrets",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f064",
+   "heuristic": "git-push",
+   "claude": "resolve-pr-comments",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f066",
+   "heuristic": "review-breaking",
+   "claude": "review-dependency-pr",
+   "score_claude": 5,
+   "score_heuristic": 3
+  },
+  {
+   "family": "f067",
+   "heuristic": "test-review",
+   "claude": "review-pr-checklist",
+   "score_claude": 5,
+   "score_heuristic": 2
+  },
+  {
+   "family": "f070",
+   "heuristic": "go-test",
+   "claude": "backport-pr",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f071",
+   "heuristic": "upgrade-major",
+   "claude": "upgrade-package",
+   "score_claude": 4,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f073",
+   "heuristic": "install-prs-merge",
+   "claude": "triage-dependabot-prs",
+   "score_heuristic": 2,
+   "score_claude": 5
+  },
+  {
+   "family": "f076",
+   "heuristic": "npm-test",
+   "claude": "pin-dependency",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f080",
+   "heuristic": "scaffold-component",
+   "claude": "scaffold-component",
+   "score_claude": 5,
+   "score_heuristic": 5
+  },
+  {
+   "family": "f082",
+   "heuristic": "add",
+   "claude": "generate-migration",
+   "score_heuristic": 1,
+   "score_claude": 5
+  },
+  {
+   "family": "f086",
+   "heuristic": "update-build-internal",
+   "claude": "release-android-beta",
+   "score_heuristic": 2,
+   "score_claude": 3
+  },
+  {
+   "family": "f088",
+   "heuristic": "build-simulator",
+   "claude": "run-pr-simulator",
+   "score_claude": 5,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f089",
+   "heuristic": "build-firebase-android",
+   "claude": "distribute-android-qa",
+   "score_heuristic": 4,
+   "score_claude": 4
+  },
+  {
+   "family": "f092",
+   "heuristic": "get-issue",
+   "claude": "mirror-bug-issue",
+   "score_claude": 5,
+   "score_heuristic": 1
+  },
+  {
+   "family": "f093",
+   "heuristic": "update-sprint-post",
+   "claude": "report-sprint-status",
+   "score_claude": 5,
+   "score_heuristic": 4
+  },
+  {
+   "family": "f094",
+   "heuristic": "post-merged-release",
+   "claude": "announce-release",
+   "score_heuristic": 2,
+   "score_claude": 4
+  },
+  {
+   "family": "f095",
+   "heuristic": "create-postmortem-post",
+   "claude": "write-postmortem",
+   "score_heuristic": 4,
+   "score_claude": 5
+  },
+  {
+   "family": "f098",
+   "heuristic": "triage-thread-ticket",
+   "claude": "triage-slack-bug",
+   "score_claude": 5,
+   "score_heuristic": 4
+  }
+ ]
+}

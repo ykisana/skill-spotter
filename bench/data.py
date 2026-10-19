@@ -86,6 +86,37 @@ def make_pairs(
             for j in by_family[t.related_to]:
                 pairs.append((t.idx, j, 0, f"hard_{t.difficulty or 'different'}"))
     n_pos = sum(1 for p in pairs if p[2] == 1)
+    # Different tasks that share a meaningful command (two unrelated "psql -c ..." questions):
+    # the case that fooled action-heavy matchers once one-offs were in the data.
+    from skill_spotter.capture.normalize_actions import normalize_action, turn_fingerprint
+
+    by_token: Dict[Tuple[str, str], List[int]] = {}
+    for t in turns:
+        fp = turn_fingerprint(
+            [
+                normalize_action(
+                    a["tool"], a.get("input") or {}, t.root, failed=bool(a.get("failed"))
+                )
+                for a in t.actions
+            ]
+        )
+        for tok, w in fp.items():
+            if w >= 0.5 and not tok.startswith("seq:"):
+                by_token.setdefault((t.project, tok), []).append(t.idx)
+    buckets = [v for v in by_token.values() if len(v) >= 2]
+    seen_shared = set()
+    want_shared = n_pos
+    tries = 0
+    while want_shared > 0 and buckets and tries < n_pos * 50:
+        tries += 1
+        bucket = rng.choice(buckets)
+        i, j = rng.sample(bucket, 2)
+        key = (min(i, j), max(i, j))
+        if turns[i].label == turns[j].label or key in seen_shared:
+            continue
+        seen_shared.add(key)
+        pairs.append((key[0], key[1], 0, "shared_command"))
+        want_shared -= 1
     positives = [t.idx for t in turns if t.kind == "positive"]
     by_project: Dict[str, List[int]] = {}
     for t in turns:

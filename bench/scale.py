@@ -214,6 +214,16 @@ def lookup_benchmark(k: int = 10, scale_to: int = 100_000) -> list:
     import sqlite_vec
 
     conn = sqlite3.connect(":memory:")
+    if not hasattr(conn, "enable_load_extension"):
+        results.append(
+            {
+                "method": "sqlite_vec",
+                "error": "this Python's sqlite3 can't load extensions "
+                "(python.org macOS builds); not measured",
+            }
+        )
+        print(results[-1])
+        return results
     conn.enable_load_extension(True)
     sqlite_vec.load(conn)
     conn.execute(f"CREATE VIRTUAL TABLE v USING vec0(e float[{big.shape[1]}])")

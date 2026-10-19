@@ -1,0 +1,48 @@
+{
+ "lookup": [
+  {
+   "method": "brute_force",
+   "recall@10": 0.8506,
+   "p50_ms": 8.351,
+   "p95_ms": 8.55,
+   "index_size": 100000,
+   "queries": 348
+  },
+  {
+   "method": "inverted_index",
+   "recall@10": 0.6437,
+   "p50_ms": 0.01,
+   "p95_ms": 0.022,
+   "index_size": 100000,
+   "queries": 348
+  },
+  {
+   "method": "minhash_lsh",
+   "recall@10": 0.4339,
+   "p50_ms": 0.018,
+   "p95_ms": 0.027,
+   "index_size": 100000,
+   "queries": 348
+  },
+  {
+   "method": "hnswlib",
+   "recall@10": 0.8506,
+   "p50_ms": 0.31,
+   "p95_ms": 0.408,
+   "index_size": 100000,
+   "queries": 348
+  },
+  {
+   "method": "faiss_hnsw",
+   "recall@10": 0.8477,
+   "p50_ms": 0.056,
+   "p95_ms": 0.107,
+   "index_size": 100000,
+   "queries": 348
+  },
+  {
+   "method": "sqlite_vec",
+   "error": "this Python's sqlite3 can't load extensions (python.org macOS builds); not measured"
+  }
+ ]
+}
