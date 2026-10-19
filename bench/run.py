@@ -24,6 +24,7 @@ from . import data as D
 from . import metrics as M
 from .methods import actions as A  # noqa: F401  (registers methods)
 from .methods import cluster as C  # noqa: F401
+from .methods import fusion as F  # noqa: F401  (registers methods)
 from .methods import templating as T
 from .methods import text as X  # noqa: F401
 from .methods.base import REGISTRY, make
@@ -44,7 +45,8 @@ STDLIB_CLUSTER = {"leader", "components"}
 
 
 class Lab:
-    def __init__(self):
+    def __init__(self, reuse: bool = False):
+        self.reuse = reuse
         self.dev = D.load("dev")
         self.test = D.load("test")
         self.pairs = {"dev": D.make_pairs(self.dev), "test": D.make_pairs(self.test)}
@@ -86,6 +88,18 @@ class Lab:
         out = {}
         for name in REGISTRY["text"]:
             started = time.time()
+            if self.reuse and all(
+                self.cache_path("text", name, s).exists() for s in ("dev", "test")
+            ):
+                scores = {s: np.load(self.cache_path("text", name, s)) for s in ("dev", "test")}
+                out[name] = self.evaluate_scores(
+                    "text",
+                    name,
+                    scores,
+                    {"reused": True},
+                    "stdlib" if name in STDLIB_TEXT else "extras",
+                )
+                continue
             try:
                 scores = {}
                 for split in ("dev", "test"):
@@ -170,6 +184,19 @@ class Lab:
                     continue  # templater comparison only on the baseline representation
                 key = f"{aname}[{tname}]"
                 started = time.time()
+                if self.reuse and all(
+                    self.cache_path("actions", key, s).exists() for s in ("dev", "test")
+                ):
+                    scores = {
+                        s: np.load(self.cache_path("actions", key, s)) for s in ("dev", "test")
+                    }
+                    track = (
+                        "stdlib"
+                        if aname in STDLIB_ACTIONS and tname in STDLIB_TEMPLATERS
+                        else "extras"
+                    )
+                    out[key] = self.evaluate_scores("actions", key, scores, {"reused": True}, track)
+                    continue
                 try:
                     scores = {}
                     for split in ("dev", "test"):
@@ -401,9 +428,10 @@ def pick_best(results: Dict[str, dict], allowed: set) -> str:
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--stages", default="text,templating,actions,fusion")
+    parser.add_argument("--reuse", action="store_true", help="load cached text/action scores")
     args = parser.parse_args()
     stages = args.stages.split(",")
-    lab = Lab()
+    lab = Lab(reuse=args.reuse)
     print(
         f"dev: {len(lab.dev)} turns, {len(lab.pairs['dev'])} pairs; test: {len(lab.test)} turns, {len(lab.pairs['test'])} pairs"
     )

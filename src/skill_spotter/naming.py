@@ -146,7 +146,6 @@ def from_words(
         return w not in GENERIC_NOUNS and w != verb_word and _verb(w) != verb and w not in commands
 
     objects = [w for w in edited if w in strong and usable(w)]
-    from_file = bool(objects) or bool(edited)
     if not objects:
         objects = [w for w in action_words if w in strong and usable(w)]
     if not objects:
