@@ -53,6 +53,23 @@ def _edited_stems(tokens: Mapping[str, float]) -> List[str]:
     return [s for s in stems if s]
 
 
+def _action_words(tokens: Mapping[str, float]):
+    """(command names, other words) from the task's strongest Bash/MCP tokens."""
+    commands, words = set(), []
+    for token, weight in sorted(tokens.items(), key=lambda x: -x[1]):
+        if weight < 0.5:
+            continue
+        kind, _, body = token.partition(":")
+        if kind == "bash":
+            parts = [w for w in body.split() if not w.startswith("-")]
+            if parts:
+                commands.add(parts[0])
+                words.extend(w.lower() for w in parts[1:] if w.isalpha())
+        elif kind == "mcp":
+            words.extend(re.split(r"[^a-z]+", body.split(":")[-1].split("(")[0].lower()))
+    return commands, [w for w in dict.fromkeys(words) if w]
+
+
 def from_words(
     words: Mapping[str, float],
     order_hint: Sequence[str] = (),
@@ -72,9 +89,17 @@ def from_words(
     strong = {w: f for w, f in words.items() if f >= 0.5 and w not in _FILLER}
     if not strong:
         return None
+    first_verb = None
+    for word, frac in sorted((first_words or {}).items(), key=lambda x: -x[1]):
+        if frac >= 0.5 and word in _VERB_SET:
+            first_verb = word
+            break
     edited = _edited_stems(tokens or {})
     objects = [w for w in edited if w in strong and w not in _VERB_SET]
     from_file = bool(objects)
+    commands, action_words = _action_words(tokens or {})
+    if not objects:  # a word the prompts and the commands share: "create a tag" + git tag
+        objects = [w for w in action_words if w in strong and w != first_verb]
     if not objects:
         objects = sorted(
             (w for w in strong if w not in _VERB_SET and w not in GENERIC_NOUNS),
@@ -83,18 +108,17 @@ def from_words(
     if not objects:
         return None
     obj = objects[0]
-    verb = None
-    for word, frac in sorted((first_words or {}).items(), key=lambda x: -x[1]):
-        if frac >= 0.5 and word in _VERB_SET:
-            verb = word
-            break
+    verb = first_verb
     if verb is None and from_file:
         verb = "update"
+    if verb == obj:
+        verb = None
     qualifier = None
     if obj in order_hint:
         i = order_hint.index(obj)
         before = order_hint[i - 1] if i > 0 else None
-        if before and strong.get(before, 0) >= 0.8 and before not in _VERB_SET | GENERIC_NOUNS:
+        blocked = _VERB_SET | GENERIC_NOUNS | commands
+        if before and strong.get(before, 0) >= 0.8 and before not in blocked:
             qualifier = before
     picked = [w for w in (verb, qualifier, obj) if w]
     return _kebab(picked) or None

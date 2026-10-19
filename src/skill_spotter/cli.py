@@ -223,7 +223,7 @@ def cmd_stats(conn: sqlite3.Connection, *, as_json: bool) -> int:
         f"accepted: {data['accepted']} ({pct}) · snoozed: {data['snoozed']} · "
         f"dismissed: {data['dismissed']}\n"
         f"skills used at least once: {data['skills_used_at_least_once']} "
-        f"({data['skill_uses']} uses)"
+        f"({data['skill_uses']} use{'' if data['skill_uses'] == 1 else 's'})"
     )
     return 0
 

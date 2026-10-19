@@ -39,7 +39,8 @@ def _start_of_day(now: float) -> float:
 
 def message(pattern_id: int, count: int, name: str) -> str:
     return (
-        f"[skill-spotter] You've done this {count} times (pattern p{pattern_id}). "
+        f"[skill-spotter] You've done this {count} time{'s' if count != 1 else ''} "
+        f"(pattern p{pattern_id}). "
         f"Run /skill-spotter:draft p{pattern_id} to save it as /{name}."
     )
 

@@ -2,7 +2,7 @@
 
 A Claude Code plugin that notices tasks you keep repeating and suggests saving them as a skill you can run with `/skill-name`.
 
-> **Status: M1.** Records prompts and tool calls, recognises the same task phrased differently, suggests it after 3 times in 2+ sessions, and drafts the skill with `/skill-spotter:draft`. Lifecycle tracking (snooze, acceptance stats) is next.
+> **Status: M2.** Records prompts and tool calls, recognises the same task phrased differently, suggests it after 3 times in 2+ sessions, drafts the skill with `/skill-spotter:draft`, and tracks what happens next: snoozed, dismissed, accepted, and how often you use the skills it helped create (`skill-spotter stats`).
 
 - **Local only.** Data stays in Claude Code's plugin data folder. No network calls.
 - **Zero tokens per turn.** Hooks print nothing to Claude. Suggestions use a `systemMessage`, which only you see.

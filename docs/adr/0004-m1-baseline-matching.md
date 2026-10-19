@@ -33,3 +33,13 @@
 ## Consequences
 
 - Latency budgets are asserted strictly locally and loosely on CI (400 ms / 50 ms), because shared runners showed 250–300 ms spikes from disk noise.
+
+## M2 additions (2026-10-19)
+
+- **Acceptance has three paths:** `ConfigChange` (matcher `skills`), a scan of the project and personal skill folders when a turn ends, and the draft skill's `accept` call.
+  - Real sessions showed `ConfigChange` only fires if the session lives long enough for Claude Code's file watcher. A short headless session that wrote the skill was caught by the scan instead.
+- **Snoozing:** `SessionEnd` snoozes suggestions shown in that session that are still `suggested`. The second snooze dismisses the pattern. Accepted patterns are never snoozed.
+- **Usage:** `UserPromptExpansion` logs `used` when the command matches an accepted pattern's skill folder name or suggested name. A plugin prefix (`plugin:name`) is stripped.
+- **Retention:** turns and actions older than 90 days are pruned at most once a day, when a turn ends. Pattern aggregates stay.
+- **Testable time:** `clock.now()` is the only time source the handlers use, so tests can move past snoozes.
+- **Naming, revised again:** after the edited-file object, prefer a word the prompts share with the task's commands ("create an annotated git tag" + `git tag` → `/create-tag`, not `/create-annotated`). The verb is chosen first, so a command word can still be the object.

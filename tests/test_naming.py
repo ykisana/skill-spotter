@@ -49,3 +49,13 @@ def test_names_are_short_kebab():
     r = rep({"x" * 60: 1.0})
     name = naming.suggest_name(r, None)
     assert len(name) <= 40 and name == name.lower()
+
+
+def test_object_from_command_words():
+    r = rep(
+        {"create": 1.0, "annotated": 1.0, "git": 1.0, "tag": 1.0, "next": 1.0, "patch": 1.0},
+        first={"create": 1.0},
+        tokens={"bash:git tag -a": 1.0, "bash:git tag": 0.5, "bash:git": 0.1},
+    )
+    hint = ["create", "annotated", "git", "tag", "next", "patch", "version"]
+    assert naming.suggest_name(r, None, order_hint=hint) == "create-tag"

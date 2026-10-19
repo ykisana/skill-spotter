@@ -65,3 +65,24 @@ claude --plugin-dir $P -p "/update-changelog" --allowedTools "Bash(git *)" Read 
 ```
 
 Interactively, `/skill-spotter:draft p1` asks one question (typed-only or model-invocable) and Claude Code asks you to approve writing into `.claude/skills/`.
+
+## M2: lifecycle
+
+Lower the thresholds in a dev database so one session is enough (undo afterwards):
+
+```bash
+D=~/.claude/plugins/data/skill-spotter-inline
+sqlite3 $D/skill-spotter.db "insert or replace into settings values('min_count','1'),('min_sessions','1');"
+```
+
+| Check | How | Expect |
+|---|---|---|
+| Snooze on session end | run any new task headless; the session ends | `patterns.state = snoozed`, a `snoozed` event with `until` 14 days out |
+| Accept via ConfigChange | in a session long enough for the file watcher (e.g. ask Claude to write `.claude/skills/<suggested-name>/SKILL.md` then `sleep 3`) | `accepted` event with `"via": "config_change"`; debug log shows `ConfigChange:skills … status 0` |
+| Accept via scan | create the skill folder outside a session, then run any turn in the project | `"via": "scan"` |
+| Usage | `claude -p "/<skill-name>"` | a `used` event; `skill-spotter status` shows `used 1x` |
+| Stats | `bin/skill-spotter --data-dir $D stats` | suggestions shown, accepted %, skills used at least once |
+
+```bash
+sqlite3 $D/skill-spotter.db "delete from settings where key in ('min_count','min_sessions');"
+```
