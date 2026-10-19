@@ -21,7 +21,19 @@ DEFAULTS: Dict[str, float] = {
     "text_only": 0.6,
     "few_actions": 2,
     "text_weight_in_score": 0.25,
+    # M3 findings (ADR 0006): an action-only match between turns with few meaningful
+    # actions also needs a little text agreement ("psql -c ..." for unrelated questions),
+    # and only meaningful tokens count towards action similarity.
+    "text_gate": 0.08,
+    "text_gate_below_actions": 3,
+    "meaningful_min_weight": 0.25,
 }
+
+
+def meaningful(tokens: Mapping[str, float], min_weight: float = 0.25) -> Dict[str, float]:
+    """Drop L1 command names and low-value exploration tokens (weights below
+    ``min_weight``): identical sets of those (two Grep-only turns) said nothing about the task."""
+    return {t: w for t, w in tokens.items() if w >= min_weight}
 
 
 def idf(df: int, n_turns: int) -> float:
@@ -55,7 +67,10 @@ def text_similarity(grams: set, pattern_text: Mapping[str, float]) -> float:
 def same_task(
     action_sim: float, text_sim: float, n_meaningful: int, params: Mapping[str, float] = DEFAULTS
 ) -> bool:
-    if action_sim >= params["action_strong"]:
+    gate = params.get("text_gate", 0.0)
+    if action_sim >= params["action_strong"] and (
+        n_meaningful >= params.get("text_gate_below_actions", 0) or text_sim >= gate
+    ):
         return True
     if action_sim >= params["action_weak"] and text_sim >= params["text_with_weak_action"]:
         return True

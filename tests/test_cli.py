@@ -55,9 +55,19 @@ def test_forget_asks_first(isolated_data_dir, monkeypatch, capsys):
     assert not isolated_data_dir.exists()
 
 
-def test_planned_commands_say_so(capsys):
-    assert cli.main(["train"]) == 2
-    assert "not implemented yet" in capsys.readouterr().err
+def test_train_runs_on_an_empty_database(capsys, isolated_data_dir):
+    assert cli.main(["train"]) == 0
+    assert "skill-spotter train:" in capsys.readouterr().out
+    assert not (isolated_data_dir / "background.lock").exists()
+
+
+def test_extras_needs_confirmation_and_can_be_removed(monkeypatch, isolated_data_dir, capsys):
+    monkeypatch.setattr("builtins.input", lambda _prompt: "n")
+    assert cli.main(["extras"]) == 1
+    assert not (isolated_data_dir / "extras").exists()
+    (isolated_data_dir / "extras").mkdir(parents=True)
+    assert cli.main(["extras", "--remove"]) == 0
+    assert not (isolated_data_dir / "extras").exists()
 
 
 def test_bin_shim_runs():

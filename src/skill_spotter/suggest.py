@@ -45,6 +45,19 @@ def message(pattern_id: int, count: int, name: str) -> str:
     )
 
 
+def session_or_day_capped(conn: sqlite3.Connection, session_id: str, now: float) -> bool:
+    """One suggestion per session, three per day (patterns and workflows together)."""
+    already = conn.execute(
+        "SELECT COUNT(*) FROM events WHERE type = 'suggested' AND session_id = ?", (session_id,)
+    ).fetchone()[0]
+    if already:
+        return True
+    today = conn.execute(
+        "SELECT COUNT(*) FROM events WHERE type = 'suggested' AND ts >= ?", (_start_of_day(now),)
+    ).fetchone()[0]
+    return today >= MAX_PER_DAY
+
+
 def context_text(suggestion: str) -> str:
     """The suggestion as a factual statement for Claude (``suggest_via = claude``)."""
     body = suggestion.replace("[skill-spotter] ", "")
@@ -75,15 +88,28 @@ def maybe_suggest(
     rep = json.loads(p["representative_json"])
     if is_generic(conn, p["project_key"], rep):
         return None
-    already = conn.execute(
-        "SELECT COUNT(*) FROM events WHERE type = 'suggested' AND session_id = ?", (session_id,)
-    ).fetchone()[0]
-    if already:
+    # A task split across two patterns: fold this one into the pattern already shown (or
+    # accepted, or dismissed) instead of suggesting the same task twice.
+    twin = patterns.similar_pattern(
+        conn, pattern_id, ("suggested", "snoozed", "accepted", "dismissed")
+    )
+    if twin is not None:
+        patterns.merge_into(conn, twin, [pattern_id])
+        conn.execute(
+            "INSERT INTO events(ts, type, pattern_id, session_id, data_json) "
+            "VALUES(?, 'merged', ?, ?, ?)",
+            (now, twin, session_id, json.dumps({"from": [pattern_id], "via": "suggest"})),
+        )
         return None
-    today = conn.execute(
-        "SELECT COUNT(*) FROM events WHERE type = 'suggested' AND ts >= ?", (_start_of_day(now),)
-    ).fetchone()[0]
-    if today >= MAX_PER_DAY:
+    if session_or_day_capped(conn, session_id, now):
+        return None
+    # Part of a multi-prompt workflow that is forming (or was suggested): the workflow
+    # gets the single suggestion instead (M5).
+    if p["workflow_id"] is not None:
+        return None
+    from . import workflows
+
+    if workflows.forming_for_pattern(conn, pattern_id, session_id, now):
         return None
     taken = [
         r[0]
@@ -111,3 +137,15 @@ def maybe_suggest(
         (now, pattern_id, session_id, json.dumps({"count": count, "name": name})),
     )
     return message(pattern_id, count, name)
+
+
+def suggest_ready(
+    conn: sqlite3.Connection, project_key: str, session_id: str, now: float
+) -> Optional[str]:
+    """Show the oldest pattern the background job marked ``ready`` in this project."""
+    row = conn.execute(
+        "SELECT id FROM patterns WHERE project_key = ? AND state = 'ready' "
+        "ORDER BY last_seen LIMIT 1",
+        (project_key,),
+    ).fetchone()
+    return maybe_suggest(conn, row[0], session_id, now) if row else None

@@ -15,10 +15,7 @@ from typing import Optional
 from . import __version__, lifecycle, paths, report, store
 
 # Subcommands from SPEC section 12 that later milestones implement.
-PLANNED = {
-    "train": "M4",
-    "extras": "M4",
-}
+PLANNED: dict = {}
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -55,6 +52,11 @@ def build_parser() -> argparse.ArgumentParser:
     stats = sub.add_parser("stats", help="suggestions shown, accepted %%, skills used")
     stats.add_argument("--json", action="store_true", help="machine-readable output")
 
+    sub.add_parser("train", help="run the background re-clustering job now")
+    extras = sub.add_parser("extras", help="install optional background dependencies")
+    extras.add_argument("--yes", action="store_true", help="don't ask for confirmation")
+    extras.add_argument("--remove", action="store_true", help="uninstall them")
+
     sub.add_parser("on", help="resume suggestions")
     sub.add_parser("off", help="pause suggestions")
 
@@ -83,6 +85,10 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if args.command == "forget":
         return cmd_forget(base, assume_yes=args.yes)
+    if args.command == "train":
+        return cmd_train(base)
+    if args.command == "extras":
+        return cmd_extras(base, assume_yes=args.yes, remove=args.remove)
 
     try:
         conn = store.connect(paths.db_path(base))
@@ -226,6 +232,58 @@ def cmd_stats(conn: sqlite3.Connection, *, as_json: bool) -> int:
         f"({data['skill_uses']} use{'' if data['skill_uses'] == 1 else 's'})"
     )
     return 0
+
+
+def cmd_train(base: Path) -> int:
+    from .background import job
+
+    store.connect(paths.db_path(base)).close()  # make sure the schema exists
+    code = job.main(["--data-dir", str(base)])
+    conn = store.connect(paths.db_path(base))
+    summary = store.get_setting(conn, "background_last_summary", "{}")
+    conn.close()
+    print(f"skill-spotter train: {summary}")
+    return code
+
+
+# Optional background-tier dependencies (SPEC 5.5), pinned. Installed only on request.
+EXTRAS = ["numpy==2.5.4", "scikit-learn==1.9.1", "fastembed==0.9.0"]
+
+
+def cmd_extras(base: Path, *, assume_yes: bool, remove: bool) -> int:
+    target = base / "extras"
+    if remove:
+        shutil.rmtree(target, ignore_errors=True)
+        print(f"skill-spotter: removed optional dependencies ({target}).")
+        return 0
+    if not assume_yes:
+        reply = input(
+            f"Install {', '.join(EXTRAS)} (about 400 MB, from PyPI) into {target}? "
+            "This is the only network access skill-spotter ever makes. [y/N] "
+        )
+        if reply.strip().lower() not in ("y", "yes"):
+            print("Nothing installed.")
+            return 1
+    import subprocess
+
+    target.mkdir(parents=True, exist_ok=True)
+    proc = subprocess.run(
+        [sys.executable, "-m", "pip", "install", "--quiet", "--target", str(target), *EXTRAS]
+    )
+    if proc.returncode != 0:
+        return proc.returncode
+    # Download the embedding model now, so the background job never needs the network.
+    prefetch = (
+        "import sys; sys.path.insert(0, sys.argv[1]); from fastembed import TextEmbedding; "
+        "TextEmbedding('jinaai/jina-embeddings-v2-small-en', cache_dir=sys.argv[2])"
+    )
+    proc = subprocess.run([sys.executable, "-c", prefetch, str(target), str(target / "models")])
+    if proc.returncode == 0:
+        print(
+            f"skill-spotter: optional dependencies installed in {target}. "
+            "The background job uses them from now on; hooks never do."
+        )
+    return proc.returncode
 
 
 def cmd_forget(base: Path, *, assume_yes: bool) -> int:

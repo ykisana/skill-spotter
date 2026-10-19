@@ -135,6 +135,40 @@ MIGRATIONS: list[str] = [
         updated          REAL NOT NULL DEFAULT 0
     );
     """,
+    # 3: M4 runtime features: action sequences per turn, word statistics for BM25
+    """
+    ALTER TABLE turns ADD COLUMN seq_json TEXT NOT NULL DEFAULT '[]';
+    ALTER TABLE project_stats ADD COLUMN text_len INTEGER NOT NULL DEFAULT 0;
+    """,
+    # 4: M5 multi-turn workflows (a task split across several prompts in a session)
+    """
+    CREATE TABLE workflows (
+        id             INTEGER PRIMARY KEY,
+        project_key    TEXT NOT NULL,
+        steps_key      TEXT NOT NULL,
+        steps_json     TEXT NOT NULL,
+        count          INTEGER NOT NULL DEFAULT 0,
+        session_count  INTEGER NOT NULL DEFAULT 0,
+        first_seen     REAL NOT NULL,
+        last_seen      REAL NOT NULL,
+        state          TEXT NOT NULL DEFAULT 'candidate'
+                       CHECK (state IN ('candidate', 'ready', 'suggested', 'accepted',
+                                        'snoozed', 'dismissed', 'superseded')),
+        state_until    REAL,
+        snooze_count   INTEGER NOT NULL DEFAULT 0,
+        suggested_name TEXT,
+        skill_path     TEXT,
+        UNIQUE (project_key, steps_key)
+    );
+    CREATE TABLE workflow_sessions (
+        workflow_id INTEGER NOT NULL REFERENCES workflows(id) ON DELETE CASCADE,
+        session_id  TEXT NOT NULL,
+        ts          REAL NOT NULL,
+        PRIMARY KEY (workflow_id, session_id)
+    );
+    ALTER TABLE patterns ADD COLUMN workflow_id INTEGER;
+    ALTER TABLE events ADD COLUMN workflow_id INTEGER;
+    """,
 ]
 
 SCHEMA_VERSION = len(MIGRATIONS)

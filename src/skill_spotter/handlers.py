@@ -72,7 +72,7 @@ def on_action(event: Event) -> None:
 def on_turn_end(event: Event) -> Optional[str]:
     """Claude finished responding. Extra: ``scheduled_prompts``.
     Returns suggestion text to show the user, or None."""
-    from . import lifecycle, patterns, project, recorder, suggest
+    from . import lifecycle, patterns, project, recorder, suggest, workflows
 
     text = None
     conn = _connect()
@@ -84,9 +84,15 @@ def on_turn_end(event: Event) -> Optional[str]:
         )
         prompt_id = event.get("prompt_id")
         pattern_id = patterns.finalize_turn(conn, prompt_id, now) if prompt_id else None
-        lifecycle.scan_for_created_skills(conn, project.project_key(event.get("cwd")), now)
+        project_key = project.project_key(event.get("cwd"))
+        lifecycle.scan_for_created_skills(conn, project_key, now)
         if pattern_id is not None:
-            text = suggest.maybe_suggest(conn, pattern_id, session_id, now)
+            touched = workflows.record(conn, project_key, session_id, now)
+            text = workflows.maybe_suggest(conn, project_key, session_id, touched, now)
+            if text is None:
+                text = suggest.maybe_suggest(conn, pattern_id, session_id, now)
+        if text is None:  # patterns the background job marked ready in this project
+            text = suggest.suggest_ready(conn, project_key, session_id, now)
         if text and _suggest_via(conn) == "claude":
             conn.execute(
                 "UPDATE session_meta SET pending_context = ? WHERE session_id = ?",
@@ -94,6 +100,9 @@ def on_turn_end(event: Event) -> Optional[str]:
             )
             text = None
         lifecycle.maybe_prune(conn, now)
+        from .background import launcher
+
+        launcher.maybe_spawn(conn, now)
     finally:
         conn.close()
     if text is None and os.environ.get(DEBUG_SUGGEST_ENV) == "1":
