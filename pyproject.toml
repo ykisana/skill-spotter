@@ -35,4 +35,4 @@ extend-exclude = ["*.md"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 # Keep typing.Dict/Optional: the online tier must run on Python 3.9 at runtime.
-ignore = ["UP006", "UP007", "UP035", "UP045"]
+ignore = ["UP006", "UP007", "UP035", "UP045", "SIM905"]
