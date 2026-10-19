@@ -173,11 +173,11 @@ def finalize_turn(conn: sqlite3.Connection, prompt_id: str, now: float) -> Optio
                 (project_key,),
             )
             text = {g: 1.0 for g in grams}
-            words = {
-                w: 1.0 for w in set(normalize_text.content_words(turn["prompt_redacted"] or ""))
-            }
+            content = normalize_text.content_words(turn["prompt_redacted"] or "")
+            words = {w: 1.0 for w in set(content)}
+            first = {content[0]: 1.0} if content else {}
             if pattern_id is None:
-                rep = {"tokens": fingerprint, "text": text, "words": words, "n": 1}
+                rep = {"tokens": fingerprint, "text": text, "words": words, "first": first, "n": 1}
                 cur = conn.execute(
                     "INSERT INTO patterns(project_key, representative_json, count, session_count, "
                     "first_seen, last_seen, danger, method_version) VALUES(?, ?, 1, 1, ?, ?, ?, ?)",
@@ -195,6 +195,7 @@ def finalize_turn(conn: sqlite3.Connection, prompt_id: str, now: float) -> Optio
                     "tokens": _average(old.get("tokens", {}), fingerprint, n),
                     "text": _average(old.get("text", {}), text, n),
                     "words": _average(old.get("words", {}), words, n),
+                    "first": _average(old.get("first", {}), first, n),
                     "n": n + 1,
                 }
                 conn.execute(

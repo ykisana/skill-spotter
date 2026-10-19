@@ -293,7 +293,7 @@ def _bash_action(command: str) -> Action:
     action.update(
         tokens=tokens,
         primary=first["l2"],
-        template=" ; ".join(p["template"] for p in parsed),
+        template=" ; ".join(p["template"] for p in (meaningful or parsed)),
         summary=redact(command)[:500],
         danger=any(p["danger"] for p in parsed),
         low=not meaningful,

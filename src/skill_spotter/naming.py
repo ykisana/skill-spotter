@@ -37,23 +37,67 @@ def _kebab(words: Iterable[str]) -> str:
     return re.sub(r"-{2,}", "-", name)[:40].strip("-")
 
 
-def from_words(words: Mapping[str, float], order_hint: Sequence[str] = ()) -> Optional[str]:
-    """Verb + up to two object words that appear in most of the pattern's prompts,
-    ordered as they appear in ``order_hint`` (usually the latest prompt)."""
-    ranked = sorted(
-        ((w, f) for w, f in words.items() if w not in _FILLER and f >= 0.5),
-        key=lambda x: (-x[1], x[0]),
-    )
-    verbs = [w for w, _ in ranked if w in _VERB_SET]
-    nouns = [w for w, _ in ranked if w not in _VERB_SET]
-    if not nouns:
+GENERIC_NOUNS = frozenset(
+    """commit commits result results change changes code file files repo repository branch
+    thing things stuff tag tags latest last previous current new week today yesterday time
+    times way bit project""".split()
+)
+
+
+def _edited_stems(tokens: Mapping[str, float]) -> List[str]:
+    stems = []
+    for token, weight in sorted(tokens.items(), key=lambda x: -x[1]):
+        if token.startswith("edit:") and weight >= 0.5:
+            stem = os.path.splitext(os.path.basename(token[5:]))[0].lower()
+            stems.extend(re.split(r"[^a-z0-9]+", stem))
+    return [s for s in stems if s]
+
+
+def from_words(
+    words: Mapping[str, float],
+    order_hint: Sequence[str] = (),
+    *,
+    first_words: Mapping[str, float] = None,
+    tokens: Mapping[str, float] = None,
+) -> Optional[str]:
+    """verb + object (+ qualifier).
+
+    - object: a consistent prompt word that names the file the task edits, else the most
+      consistent non-generic word;
+    - verb: the prompts' consistent first word if it's a verb, else "update" when the task
+      edits that file;
+    - qualifier: the word just before the object in the latest prompt, if consistent
+      (e.g. "weekly changelog").
+    """
+    strong = {w: f for w, f in words.items() if f >= 0.5 and w not in _FILLER}
+    if not strong:
         return None
-    picked = nouns[:2]
-    position = {w: i for i, w in reversed(list(enumerate(order_hint)))}
-    picked.sort(key=lambda w: position.get(w, len(position)))
-    if verbs:
-        picked.insert(0, verbs[0])
-    return _kebab(picked[:3]) or None
+    edited = _edited_stems(tokens or {})
+    objects = [w for w in edited if w in strong and w not in _VERB_SET]
+    from_file = bool(objects)
+    if not objects:
+        objects = sorted(
+            (w for w in strong if w not in _VERB_SET and w not in GENERIC_NOUNS),
+            key=lambda w: (-strong[w], order_hint.index(w) if w in order_hint else 999, w),
+        )
+    if not objects:
+        return None
+    obj = objects[0]
+    verb = None
+    for word, frac in sorted((first_words or {}).items(), key=lambda x: -x[1]):
+        if frac >= 0.5 and word in _VERB_SET:
+            verb = word
+            break
+    if verb is None and from_file:
+        verb = "update"
+    qualifier = None
+    if obj in order_hint:
+        i = order_hint.index(obj)
+        before = order_hint[i - 1] if i > 0 else None
+        if before and strong.get(before, 0) >= 0.8 and before not in _VERB_SET | GENERIC_NOUNS:
+            qualifier = before
+    picked = [w for w in (verb, qualifier, obj) if w]
+    return _kebab(picked) or None
 
 
 def from_tokens(tokens: Mapping[str, float]) -> Optional[str]:
@@ -99,7 +143,12 @@ def suggest_name(
     order_hint: Sequence[str] = (),
 ) -> str:
     base = (
-        from_words(representative.get("words", {}), order_hint)
+        from_words(
+            representative.get("words", {}),
+            order_hint,
+            first_words=representative.get("first", {}),
+            tokens=representative.get("tokens", {}),
+        )
         or from_tokens(representative.get("tokens", {}))
         or "repeated-task"
     )
