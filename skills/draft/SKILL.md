@@ -18,7 +18,7 @@ Turn skill-spotter pattern `$0` into a skill the user can run with `/name`.
 3. Decide who can start the skill. If `$1` is `manual` or `auto`, use that. Otherwise ask the user exactly one question: "Should Claude be able to use this skill on its own, or only when you type /<name>?" The default is only when typed.
    If `danger` is true, the skill is always typed-only, whatever the answer.
 
-4. Write `skill_path` (create the folders). Use the suggested name unless a clearly better short kebab-case name (max 3 words) fits; if you change it, change the folder name to match. The file contains:
+4. Write `skill_path` with the Write tool (it creates the folders; no mkdir needed). Use the suggested name unless a clearly better short kebab-case name (max 3 words) fits; if you change it, change the folder name to match. The file contains:
    - frontmatter:
      - `description`: one line saying what it does. If model-invocable, write it for triggering: key use case first, natural phrases the user would type.
      - `disable-model-invocation: true` unless the user chose auto (and never when `danger` is true).
