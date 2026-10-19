@@ -89,6 +89,17 @@ class LogReg(Fuser):
         lr = self.model[-1]
         return dict(zip(FEATURES, [round(float(c), 3) for c in lr.coef_[0]]))
 
+    def export(self):
+        """Everything the stdlib runtime needs: p = sigmoid(sum(w * (x - mean) / scale) + b)."""
+        scaler, lr = self.model[0], self.model[-1]
+        return {
+            "features": FEATURES,
+            "mean": [float(x) for x in scaler.mean_],
+            "scale": [float(x) for x in scaler.scale_],
+            "coef": [float(x) for x in lr.coef_[0]],
+            "intercept": float(lr.intercept_[0]),
+        }
+
 
 @register("fusion", "gbt")
 class GradientBoosted(Fuser):

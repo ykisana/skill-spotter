@@ -231,6 +231,8 @@ def replay_sim(
     every: int = 50,
     min_count=3,
     min_sessions=2,
+    max_candidates: int = 20,
+    members_per_pattern: int = 10,
 ) -> Dict:
     from skill_spotter.capture import normalize_text as nt
     from skill_spotter.capture.normalize_actions import normalize_action, turn_fingerprint
@@ -294,13 +296,17 @@ def replay_sim(
         for k in keys:
             cand |= index[(t.project, k)]
         cand = [c for c in cand if t.ts - turns[patterns[c][-1]].ts <= WINDOW]
+        if len(cand) > max_candidates:  # same cap as the runtime: most shared keys first
+            keep = set(cand)
+            hits = Counter(c for k in keys for c in index[(t.project, k)] if c in keep)
+            cand = [c for c, _ in hits.most_common(max_candidates)]
         best, best_s = None, -1.0
         if cand:
-            pairs = [(t.idx, m) for c in cand for m in patterns[c][-10:]]
+            pairs = [(t.idx, m) for c in cand for m in patterns[c][-members_per_pattern:]]
             s = scorer.scores(pairs)
             k = 0
             for c in cand:
-                m = len(patterns[c][-10:])
+                m = len(patterns[c][-members_per_pattern:])
                 mean = sum(s[k : k + m]) / m
                 k += m
                 if mean > best_s:

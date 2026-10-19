@@ -15,8 +15,43 @@ VERBS = (
     "write update create generate deploy release publish ship run fix add bump upgrade review "
     "summarize sync build test check clean cleanup migrate rollback restart backup refresh "
     "triage draft prepare rebase merge tag archive export import seed lint format audit "
-    "rotate provision scaffold analyze report notify post send open close label"
+    "rotate provision scaffold analyze report notify post send open close label skip squash "
+    "dump tail debug profile onboard resolve shard reset revert restore promote cut regenerate "
+    "rerun retry upload download install remove delete rename split scale patch benchmark "
+    "measure monitor investigate reproduce document translate validate verify compare diff "
+    "cherry-pick backport snapshot rollout"
 ).split()
+# Inflected or noun forms that point at a verb ("rolled back", "deployment").
+VERB_FORMS = {
+    "deploying": "deploy",
+    "deployed": "deploy",
+    "deployment": "deploy",
+    "deploys": "deploy",
+    "rolling": "rollback",
+    "revert": "revert",
+    "rerunning": "rerun",
+    "bumping": "bump",
+    "updating": "update",
+    "updated": "update",
+    "generating": "generate",
+    "regenerating": "regenerate",
+    "release": "release",
+    "releasing": "release",
+    "migrating": "migrate",
+    "migration": "migrate",
+    "squashing": "squash",
+    "tailing": "tail",
+    "debugging": "debug",
+    "profiling": "profile",
+    "resolving": "resolve",
+    "reviewing": "review",
+    "syncing": "sync",
+    "fixing": "fix",
+    "summary": "summarize",
+    "summarizing": "summarize",
+    "cleaning": "clean",
+    "testing": "test",
+}
 _VERB_SET = set(VERBS)
 
 # Names Claude Code already uses for built-in commands.
@@ -39,7 +74,7 @@ def _kebab(words: Iterable[str]) -> str:
 
 GENERIC_NOUNS = frozenset(
     """commit commits result results change changes code file files repo repository branch
-    thing things stuff tag tags latest last previous current new week today yesterday time
+    thing things stuff latest last previous current new week today yesterday time
     times way bit project""".split()
 )
 
@@ -70,6 +105,11 @@ def _action_words(tokens: Mapping[str, float]):
     return commands, [w for w in dict.fromkeys(words) if w]
 
 
+def _verb(word: str) -> Optional[str]:
+    word = VERB_FORMS.get(word, word)
+    return word if word in _VERB_SET else None
+
+
 def from_words(
     words: Mapping[str, float],
     order_hint: Sequence[str] = (),
@@ -77,51 +117,63 @@ def from_words(
     first_words: Mapping[str, float] = None,
     tokens: Mapping[str, float] = None,
 ) -> Optional[str]:
-    """verb + object (+ qualifier).
+    """verb + (qualifier) + object, tuned against a blind Claude judge (bench.naming).
 
-    - object: a consistent prompt word that names the file the task edits, else the most
-      consistent non-generic word;
-    - verb: the prompts' consistent first word if it's a verb, else "update" when the task
-      edits that file;
-    - qualifier: the word just before the object in the latest prompt, if consistent
-      (e.g. "weekly changelog").
+    - verb: the verb most prompts start with (at least 30% of them); else "update" when the
+      object is the edited file; else a verb among the commands' subcommands;
+    - object: the edited file's name if the prompts mention it, else a word the prompts
+      share with the commands, else the most consistent non-generic word;
+    - qualifier: one more consistent word (>= 60%), ordered as in the latest prompt.
     """
-    strong = {w: f for w, f in words.items() if f >= 0.5 and w not in _FILLER}
-    if not strong:
-        return None
-    first_verb = None
-    for word, frac in sorted((first_words or {}).items(), key=lambda x: -x[1]):
-        if frac >= 0.5 and word in _VERB_SET:
-            first_verb = word
-            break
-    edited = _edited_stems(tokens or {})
-    objects = [w for w in edited if w in strong and w not in _VERB_SET]
-    from_file = bool(objects)
-    commands, action_words = _action_words(tokens or {})
-    if not objects:  # a word the prompts and the commands share: "create a tag" + git tag
-        objects = [w for w in action_words if w in strong and w != first_verb]
+    tokens = tokens or {}
+    medium = {w: f for w, f in words.items() if f >= 0.25 and w not in _FILLER}
+    strong = {w: f for w, f in medium.items() if f >= 0.4}
+    commands, action_words = _action_words(tokens)
+    position = {w: i for i, w in reversed(list(enumerate(order_hint)))}
+
+    # A verb counts only where prompts start with it (imperative phrasing): "deploy api ...".
+    # Verbs elsewhere are often nouns in context ("since the last tag").
+    verb, verb_word = None, None
+    candidates = [(f, w) for w, f in (first_words or {}).items() if f >= 0.3 and _verb(w)]
+    if candidates:
+        _, verb_word = max(candidates)
+        verb = _verb(verb_word)
+    command_verb = next(((v, w) for w in action_words for v in [_verb(w)] if v), (None, None))
+
+    edited = _edited_stems(tokens)
+
+    def usable(w):
+        return w not in GENERIC_NOUNS and w != verb_word and _verb(w) != verb and w not in commands
+
+    objects = [w for w in edited if w in strong and usable(w)]
+    from_file = bool(objects) or bool(edited)
+    if not objects:
+        objects = [w for w in action_words if w in strong and usable(w)]
     if not objects:
         objects = sorted(
-            (w for w in strong if w not in _VERB_SET and w not in GENERIC_NOUNS),
-            key=lambda w: (-strong[w], order_hint.index(w) if w in order_hint else 999, w),
+            (w for w in strong if usable(w) and not _verb(w)),
+            key=lambda w: (-strong[w], position.get(w, 99), w),
         )
     if not objects:
         return None
     obj = objects[0]
-    verb = first_verb
-    if verb is None and from_file:
-        verb = "update"
-    if verb == obj:
-        verb = None
+    if verb is None:
+        if obj in edited:
+            verb = "update"
+        elif command_verb[0] and command_verb[1] != obj:
+            verb = command_verb[0]
+
     qualifier = None
-    if obj in order_hint:
-        i = order_hint.index(obj)
-        before = order_hint[i - 1] if i > 0 else None
-        blocked = _VERB_SET | GENERIC_NOUNS | commands
-        if before and strong.get(before, 0) >= 0.8 and before not in blocked:
-            qualifier = before
-    picked = [w for w in (verb, qualifier, obj) if w]
-    return _kebab(picked) or None
+    rest = sorted(
+        (w for w in strong if w != obj and usable(w) and not _verb(w) and strong[w] >= 0.6),
+        key=lambda w: (-strong[w], position.get(w, 99)),
+    )
+    if rest:
+        qualifier = rest[0]
+    parts = [qualifier, obj] if qualifier else [obj]
+    parts.sort(key=lambda w: position.get(w, 99))
+    picked = ([verb] if verb else []) + parts
+    return _kebab(picked[:3]) or None
 
 
 def from_tokens(tokens: Mapping[str, float]) -> Optional[str]:

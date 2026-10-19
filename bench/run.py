@@ -227,6 +227,7 @@ class Lab:
                 extra = {"text": tname, "action": aname}
                 if hasattr(fuser, "coefficients"):
                     extra["coefficients"] = fuser.coefficients()
+                    extra["export"] = fuser.export()
                 if hasattr(fuser, "w"):
                     extra["w_text"] = round(float(fuser.w), 3)
                 res = self.evaluate_scores("fusion", f"{fname}<{track}>", scores, extra, track)

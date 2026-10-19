@@ -97,8 +97,8 @@ def main():
                 "theta": pick.get("theta"),
             }
             fusion_row = fusion.get(f"{fname}<{track}>", {})
-            if "coefficients" in fusion_row:
-                config["coefficients"] = fusion_row["coefficients"]
+            if "export" in fusion_row:
+                config["logreg"] = fusion_row["export"]
         config.update(
             {
                 "track": track,

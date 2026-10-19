@@ -76,7 +76,12 @@ def heuristic_names(turns):
 
 
 def main():
-    test = D.load("test")
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--split", default="test", help="tune on dev, report on test")
+    args = parser.parse_args()
+    test = D.load(args.split)
     families = {f["family_id"]: f for f in json.loads((D.DATA / "families.json").read_text())}
     heur, info = heuristic_names(test)
     fams = sorted(heur)
@@ -125,7 +130,9 @@ def main():
         "local_llm": "not evaluated (no Ollama/llama.cpp; disk nearly full)",
     }
     RESULTS.mkdir(exist_ok=True)
-    (RESULTS / "naming.json").write_text(json.dumps({"summary": summary, "rows": rows}, indent=1))
+    summary["split"] = args.split
+    out = RESULTS / ("naming.json" if args.split == "test" else f"naming-{args.split}.json")
+    out.write_text(json.dumps({"summary": summary, "rows": rows}, indent=1))
     print(json.dumps(summary, indent=1))
 
 
