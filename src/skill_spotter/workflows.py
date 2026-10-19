@@ -147,10 +147,20 @@ def _contains(longer: Sequence[int], seq: Sequence[int]) -> bool:
 
 
 def _step_names(conn, steps: Sequence[int]) -> List[str]:
+    """A readable name per step: the pattern's suggested name, else a fresh heuristic one."""
+    from . import naming
+
     names = []
     for pid in steps:
-        row = conn.execute("SELECT suggested_name FROM patterns WHERE id = ?", (pid,)).fetchone()
-        names.append(row[0] if row and row[0] else f"p{pid}")
+        row = conn.execute(
+            "SELECT suggested_name, representative_json FROM patterns WHERE id = ?", (pid,)
+        ).fetchone()
+        if row and row[0]:
+            names.append(row[0])
+        elif row:
+            names.append(naming.suggest_name(json.loads(row[1]), None))
+        else:
+            names.append(f"p{pid}")
     return names
 
 
@@ -192,7 +202,10 @@ def maybe_suggest(
                 merged[word] = max(merged.get(word, 0.0), frac)
             tokens.update(rep.get("tokens", {}))
         root = project_key if project_key != "?" else None
-        name = w["suggested_name"] or naming.suggest_name({"words": merged, "tokens": tokens}, root)
+        first = reps[0].get("first", {}) if reps else {}
+        name = w["suggested_name"] or naming.suggest_name(
+            {"words": merged, "first": first, "tokens": tokens}, root
+        )
         if not name.endswith("-flow"):
             name = f"{name}-flow"[:40]
         conn.execute(

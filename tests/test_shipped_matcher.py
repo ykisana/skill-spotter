@@ -97,3 +97,13 @@ def test_same_task_three_times_two_sessions_suggests_once(repo, db):
             )
         )
     assert [bool(o["stop"]) for o in outs] == [False, False, True]
+
+
+def test_repeated_questions_without_meaningful_actions_join(repo, db):
+    """Exploration-only repeats (only git log / reads) match on their identical wording."""
+    for s in (Session(repo), Session(repo), Session(repo)):
+        s.turn(
+            "list the commits since the last tag",
+            [bash("git describe --tags --abbrev=0"), bash("git log v1.0.0..HEAD --oneline")],
+        )
+    assert db().execute("SELECT COUNT(DISTINCT pattern_id) FROM turns").fetchone()[0] == 1

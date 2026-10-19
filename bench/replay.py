@@ -228,7 +228,17 @@ class PairScorer:
                 "same_session": (sess[i] == sess[j]).astype(float),
                 "log_gap_days": np.log1p(np.abs(ts[i] - ts[j]) / DAY),
             }
-            for p, s in zip(todo, self.fuser.predict(cols)):
+            preds = self.fuser.predict(cols)
+            # Same text-only path as the runtime scorer (match/fused.py)
+            from skill_spotter.capture import normalize_text as nt
+
+            for k, (a, b) in enumerate(todo):
+                if min(self.n[a], self.n[b]) < 2:
+                    ga = nt.ngrams(nt.normalize(self.turns[a].prompt))
+                    gb = nt.ngrams(nt.normalize(self.turns[b].prompt))
+                    if nt.jaccard(ga, gb) >= 0.6:
+                        preds[k] = 0.99
+            for p, s in zip(todo, preds):
                 self.cache[p] = float(s)
         return [self.cache[p] for p in pairs]
 

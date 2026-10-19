@@ -1,11 +1,12 @@
 ---
-description: Save a repeated task that skill-spotter found as a reusable /skill. Usage: /skill-spotter:draft <pattern-id> [manual|auto]
-argument-hint: <pattern-id> [manual|auto]
+description: Save a repeated task (pN) or multi-prompt workflow (wN) that skill-spotter found as a reusable /skill. Usage: /skill-spotter:draft <id> [manual|auto]
+argument-hint: <pN|wN> [manual|auto]
 disable-model-invocation: true
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter *)
 ---
 
-Turn skill-spotter pattern `$0` into a skill the user can run with `/name`.
+Turn skill-spotter pattern or workflow `$0` into a skill the user can run with `/name`.
+An id starting with `w` is a workflow: a task the user does as several prompts in a row. Its JSON has `steps`, each with its own prompts, `common_steps` and `varying_values`; write ONE skill that does all steps in order (a section per step), asking for any inputs once at the start.
 
 1. Get the pattern:
    `${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" show $0 --json`

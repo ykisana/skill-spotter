@@ -225,6 +225,15 @@ class FusedScorer:
 
     def score(self, a: Mapping[str, Any], b: Mapping[str, Any]) -> float:
         f = self.features(a, b)
+        # Questions and exploration-only tasks ("list the commits since the last tag") have
+        # no meaningful actions, and synthetic training data has almost none of them, so the
+        # learned weights can't recognise them. Keep the rule's text-only path (SPEC 5.3).
+        text_only = baseline.DEFAULTS["text_only"]
+        if (
+            f["n_min"] < baseline.DEFAULTS["few_actions"]
+            and jaccard_sets(a["grams"], b["grams"]) >= text_only
+        ):
+            return 0.99
         if self.fusion == "logreg":
             lr = self.lr
             z = lr["intercept"]

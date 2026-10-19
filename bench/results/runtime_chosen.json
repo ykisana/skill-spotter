@@ -19,7 +19,7 @@
    "duplicate_suggestions": 31,
    "resuggested_after_snooze": 28,
    "extra_patterns_per_family": 3,
-   "seconds": 99.6
+   "seconds": 672.0
   },
   "lab": {
    "precision": 0.9688,
@@ -45,7 +45,7 @@
    "duplicate_suggestions": 25,
    "resuggested_after_snooze": 20,
    "extra_patterns_per_family": 5,
-   "seconds": 120.5
+   "seconds": 271.5
   },
   "lab": {
    "precision": 1.0,
