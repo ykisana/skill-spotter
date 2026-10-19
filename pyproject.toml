@@ -1,12 +1,38 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "skill-spotter"
 version = "0.0.1"
 description = "Claude Code plugin that spots repeated tasks and suggests saving them as skills."
+readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.9"
 # The online tier (everything hooks import) is standard library only. Keep this empty.
 dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+skill-spotter = "skill_spotter.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py39"
+# ruff 0.17+ also formats Python code blocks inside Markdown; leave docs as written.
+extend-exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+# Keep typing.Dict/Optional: the online tier must run on Python 3.9 at runtime.
+ignore = ["UP006", "UP007", "UP035", "UP045"]

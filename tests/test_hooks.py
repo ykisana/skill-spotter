@@ -127,14 +127,24 @@ def test_every_event_has_the_common_fields():
 @pytest.mark.parametrize(
     "name,expected",
     [
-        ("user_prompt_submit", {"kind": "prompt", "prompt": "pull this week's merged PRs "
-                                "and write the changelog summary for #eng"}),
+        (
+            "user_prompt_submit",
+            {
+                "kind": "prompt",
+                "prompt": "pull this week's merged PRs and write the changelog summary for #eng",
+            },
+        ),
         ("post_tool_use_bash", {"kind": "action", "tool_name": "Bash", "failed": False}),
         ("post_tool_use_failure", {"kind": "action", "tool_name": "Bash", "failed": True}),
         ("post_tool_use_edit_subagent", {"kind": "action", "agent_id": "agent-7"}),
         ("stop", {"kind": "turn_end"}),
-        ("config_change_skills", {"kind": "skill_change", "file_path":
-                                  "/tmp/scratch-repo/.claude/skills/weekly-changelog/SKILL.md"}),
+        (
+            "config_change_skills",
+            {
+                "kind": "skill_change",
+                "file_path": "/tmp/scratch-repo/.claude/skills/weekly-changelog/SKILL.md",
+            },
+        ),
         ("user_prompt_expansion", {"kind": "command_used", "command_name": "weekly-changelog"}),
         ("session_end", {"kind": "session_end", "reason": "prompt_input_exit"}),
     ],

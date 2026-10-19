@@ -128,9 +128,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     for version in range(current + 1, SCHEMA_VERSION + 1):
         # Each step runs in its own transaction, so a crash can't leave a half-built schema.
         script = MIGRATIONS[version - 1]
-        conn.executescript(
-            f"BEGIN IMMEDIATE;\n{script}\nPRAGMA user_version = {version};\nCOMMIT;"
-        )
+        conn.executescript(f"BEGIN IMMEDIATE;\n{script}\nPRAGMA user_version = {version};\nCOMMIT;")
 
 
 def get_setting(conn: sqlite3.Connection, key: str, default: str | None = None) -> str | None:

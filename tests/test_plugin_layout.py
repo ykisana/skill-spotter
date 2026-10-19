@@ -57,7 +57,8 @@ def imported_roots(path):
 
 
 @pytest.mark.parametrize(
-    "path", sorted(PACKAGE_DIR.glob("*.py")) + sorted((ROOT / "hooks").glob("*.py")),
+    "path",
+    sorted(PACKAGE_DIR.glob("*.py")) + sorted((ROOT / "hooks").glob("*.py")),
     ids=lambda p: f"{p.parent.name}/{p.name}",
 )
 def test_online_tier_imports_stdlib_only(path):
@@ -70,7 +71,8 @@ def test_online_tier_imports_stdlib_only(path):
 
 
 @pytest.mark.parametrize(
-    "path", sorted((ROOT / "hooks").glob("*.py")) + [ROOT / "bin" / "skill-spotter"],
+    "path",
+    sorted((ROOT / "hooks").glob("*.py")) + [ROOT / "bin" / "skill-spotter"],
     ids=lambda p: p.name,
 )
 def test_entry_points_are_executable(path):

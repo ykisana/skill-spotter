@@ -4,7 +4,7 @@
 import os
 import sys
 
-# Make src/ importable: this file is <plugin>/hooks/on_action.py, the package is <plugin>/src/.
+# This file is <plugin>/hooks/<name>.py; make the package in <plugin>/src importable.
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src"))
 
 try:
