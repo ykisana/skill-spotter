@@ -14,6 +14,9 @@ dependencies = []
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
+# Method Lab only (never imported by hooks). Exact pins: bench/requirements.txt
+bench = ["numpy", "scikit-learn", "datasketch", "drain3", "model2vec", "fastembed", "hnswlib",
+         "faiss-cpu", "sqlite-vec", "pyyaml", "matplotlib", "networkx"]
 
 [project.scripts]
 skill-spotter = "skill_spotter.cli:main"
@@ -23,6 +26,7 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = ["bench", ".venv"]
 pythonpath = ["src"]
 addopts = "-q"
 
@@ -36,3 +40,7 @@ extend-exclude = ["*.md"]
 select = ["E", "F", "W", "I", "B", "UP", "SIM"]
 # Keep typing.Dict/Optional: the online tier must run on Python 3.9 at runtime.
 ignore = ["UP006", "UP007", "UP035", "UP045", "SIM905"]
+
+[tool.ruff.lint.per-file-ignores]
+# Method Lab: dev-only research code with long prompt strings and table formatting.
+"bench/**" = ["E501", "B007", "SIM105", "SIM115"]

@@ -107,7 +107,7 @@ COMMANDS = [
 ]
 
 
-def populate(conn, repo, n_turns=2000, seed=7):
+def populate(conn, repo, n_turns=2000, seed=7, max_actions=6):
     rng = random.Random(seed)
     now = time.time() - n_turns * 60
     sessions = [f"s{i}" for i in range(80)]
@@ -119,7 +119,7 @@ def populate(conn, repo, n_turns=2000, seed=7):
         recorder.record_prompt(
             conn, {"prompt_id": pid, "session_id": sid, "cwd": repo, "prompt": " ".join(words)}, ts
         )
-        for _ in range(rng.randint(1, 6)):
+        for _ in range(rng.randint(1, max_actions)):
             cmd = rng.choice(COMMANDS).format(w=rng.choice(WORDS))
             recorder.record_action(
                 conn,

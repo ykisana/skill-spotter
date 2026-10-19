@@ -17,9 +17,12 @@ dist/
 *.db-wal
 *.db-shm
 
-# Method Lab data that must stay local (SPEC §11.4–11.5)
-bench/data/raw/
+# Method Lab: real user data never leaves this machine (SPEC §11.5)
+
 bench/data/real/
 
 # Your personal Claude Code settings for this repo
 .claude/settings.local.json
+
+# Method Lab caches (models, features)
+bench/.cache/
