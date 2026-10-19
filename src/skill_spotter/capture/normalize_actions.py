@@ -297,7 +297,7 @@ def _bash_action(command: str) -> Action:
         summary=redact(command)[:500],
         danger=any(p["danger"] for p in parsed),
         low=not meaningful,
-        values=[redact(v)[:120] for p in parsed for v in p["values"]][:20],
+        values=[redact(v) for p in (meaningful or parsed) for v in p["values"] if _param_like(v)][:20],
     )
     return action
 
@@ -372,6 +372,16 @@ def _domain(url: str) -> str:
     except ValueError:
         host = ""
     return host[4:] if host.startswith("www.") else (host or "?")
+
+
+def _param_like(value: str) -> bool:
+    """Short single-line values can become skill arguments; message bodies and code can't."""
+    return (
+        0 < len(value) <= 60
+        and "\n" not in value
+        and not value.startswith(("$(", "<<", "`"))
+        and value.count(" ") <= 3
+    )
 
 
 def _is_number(text: str) -> bool:
