@@ -1,0 +1,18 @@
+{
+  "session_id": "sess-1",
+  "transcript_path": "/tmp/transcript.jsonl",
+  "cwd": "/tmp/scratch-repo",
+  "permission_mode": "default",
+  "prompt_id": "11111111-1111-1111-1111-111111111111",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Bash",
+  "tool_input": {
+    "command": "gh pr list --state merged --search 'merged:>=2026-10-08'"
+  },
+  "tool_response": {
+    "stdout": "...",
+    "exit_code": 0
+  },
+  "tool_use_id": "toolu_01",
+  "duration_ms": 420
+}

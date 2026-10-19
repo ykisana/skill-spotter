@@ -1,0 +1,9 @@
+{
+  "session_id": "sess-1",
+  "transcript_path": "/tmp/transcript.jsonl",
+  "cwd": "/tmp/scratch-repo",
+  "permission_mode": "default",
+  "prompt_id": "11111111-1111-1111-1111-111111111111",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "pull this week's merged PRs and write the changelog summary for #eng"
+}

@@ -1,0 +1,20 @@
+{
+  "session_id": "sess-1",
+  "transcript_path": "/tmp/transcript.jsonl",
+  "cwd": "/tmp/scratch-repo",
+  "permission_mode": "default",
+  "prompt_id": "11111111-1111-1111-1111-111111111111",
+  "hook_event_name": "PostToolUse",
+  "agent_id": "agent-7",
+  "agent_type": "general-purpose",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/tmp/scratch-repo/CHANGELOG.md",
+    "old_string": "a",
+    "new_string": "b"
+  },
+  "tool_response": {
+    "filePath": "/tmp/scratch-repo/CHANGELOG.md"
+  },
+  "tool_use_id": "toolu_02"
+}

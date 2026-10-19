@@ -1,0 +1,13 @@
+{
+  "session_id": "sess-1",
+  "transcript_path": "/tmp/transcript.jsonl",
+  "cwd": "/tmp/scratch-repo",
+  "permission_mode": "default",
+  "prompt_id": "22222222-2222-2222-2222-222222222222",
+  "hook_event_name": "UserPromptExpansion",
+  "expansion_type": "slash_command",
+  "command_name": "weekly-changelog",
+  "command_args": "",
+  "command_source": "project",
+  "prompt": "/weekly-changelog"
+}
