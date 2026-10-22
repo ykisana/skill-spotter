@@ -111,7 +111,8 @@ With Claude Code v2.1.287+, the bundled mod shows suggestions as a band above th
 ```bash
 python3 -m pytest                                   # 300+ tests, stdlib only
 pipx run ruff check . && pipx run ruff format --check .
-claude plugin validate .claude-plugin/plugin.json
+claude plugin validate .
+claude plugin test                                  # the mod band, Claude Code's test kit
 python3 -m bench.replay --quick --min-precision 0.9 # what CI replays on every push
 ```
 

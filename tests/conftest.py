@@ -14,6 +14,7 @@ def isolated_data_dir(tmp_path, monkeypatch):
     data = tmp_path / "data"
     monkeypatch.setenv("SKILL_SPOTTER_DATA", str(data))
     monkeypatch.delenv("CLAUDE_PLUGIN_DATA", raising=False)
+    monkeypatch.setenv("SKILL_SPOTTER_BAND_DIR", str(tmp_path / "band"))
     # Mechanics tests use the plain rule matcher, independent of what the Method Lab ships
     # in config/method.json; test_shipped_matcher.py covers the shipped one.
     monkeypatch.setenv("SKILL_SPOTTER_METHOD_CONFIG", str(RULE_CONFIG))

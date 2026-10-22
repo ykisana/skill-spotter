@@ -35,6 +35,7 @@ What the live runs changed:
 - **After each turn:** it fetches the queued suggestion (`band pending`) and draws it above the prompt with **[Create /name]**, which fills `/skill-spotter:draft pN`, and **[Not now]**, which snoozes.
 - **Validation so far:** `claude plugin validate` (2.1.282) parses the module and lists its hooks and calls, and the Python hand-off has tests.
 - **Not yet run live:** mods need Claude Code v2.1.287+, and this machine has 2.1.282. On older versions the module doesn't load, nothing registers, and the `systemMessage` path is unchanged.
+- **Superseded:** the first live run on 2.1.308 found the module crashing on every event, and the hand-off rebuilt as a mailbox. See [ADR 0009](0009-first-live-run-on-2-1-308.md).
 
 ## Packaging
 

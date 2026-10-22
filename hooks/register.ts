@@ -6,21 +6,28 @@
 // the session never registers a band, and the Stop hook keeps using systemMessage.
 // All data stays local: the band talks to the bundled skill-spotter CLI, nothing else.
 
-type Pending = { text: string; what?: string; id?: string; name?: string; draft?: string }
+type Pending = {
+  text: string
+  what?: string
+  id?: string
+  name?: string
+  draft?: string
+  data_dir?: string
+}
 
 let pending: Pending | null = null
 let sessionId = ''
 
+// A mod can't read CLAUDE_PLUGIN_DATA (only hooks get it), so the band hand-off goes
+// through a fixed mailbox folder and each suggestion names the data folder to act on.
 async function cli($: any, args: string[]): Promise<string> {
-  const data = $.env.get('CLAUDE_PLUGIN_DATA')
-  const base = [$.plugin.root() + '/scripts/skill-spotter', ...(data ? ['--data-dir', data] : [])]
-  const result = await $.process.run(base[0], [...base.slice(1), ...args])
+  const result = await $.process.run([$.plugin.root + '/scripts/skill-spotter', ...args])
   return String(result?.stdout ?? '').trim()
 }
 
 export function register(on: any) {
   on('session.start', async ($: any, e: any, next: any) => {
-    sessionId = String($.session.id())
+    sessionId = String(await $.session.id())
     await cli($, ['band', 'register', '--session', sessionId])
     return next(e)
   })
@@ -69,7 +76,10 @@ export function register(on: any) {
               label: 'Not now',
               hotkey: '2',
               onPress: async () => {
-                if (pending!.id!.startsWith('p')) await cli($, ['snooze', pending!.id!])
+                const p = pending!
+                if (p.id!.startsWith('p')) {
+                  await cli($, [...(p.data_dir ? ['--data-dir', p.data_dir] : []), 'snooze', p.id!])
+                }
                 close()
               },
             })

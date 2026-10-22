@@ -85,6 +85,18 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def cmd_band(args) -> int:
+    """The mod's hand-off; touches only the band mailbox, never the database."""
+    from . import band
+
+    if args.action == "register":
+        band.register(args.session)
+        return 0
+    pending = band.pop(args.session)
+    print(json.dumps(pending) if pending else "")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
@@ -110,6 +122,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_scan_shell(base, args)
     if args.command == "extras":
         return cmd_extras(base, assume_yes=args.yes, remove=args.remove)
+    if args.command == "band":
+        return cmd_band(args)
 
     try:
         conn = store.connect(paths.db_path(base))
@@ -131,15 +145,6 @@ def main(argv: list[str] | None = None) -> int:
             return cmd_dismiss_or_snooze(conn, args)
         if args.command == "stats":
             return cmd_stats(conn, as_json=args.json)
-        if args.command == "band":
-            from . import band as band_mod
-
-            if args.action == "register":
-                band_mod.register(conn, args.session)
-                return 0
-            pending = band_mod.pop(conn, args.session)
-            print(json.dumps(pending) if pending else "")
-            return 0
         if args.command in ("on", "off"):
             store.set_setting(conn, "enabled", "1" if args.command == "on" else "0")
             state = "on" if args.command == "on" else "paused"

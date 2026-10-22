@@ -55,3 +55,17 @@ jobs:
         with:
           python-version: "3.13"
       - run: python -m bench.replay --quick --min-precision 0.9 --min-recall 0.6
+
+  plugin:
+    # The manifest, hooks.json and the mod (hooks/register.ts) as Claude Code reads them,
+    # and the mod's tests (tests/mod/*.test.ts). No sign-in or network needed.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: npm install -g @anthropic-ai/claude-code
+      - run: claude plugin validate .
+      - run: claude plugin test

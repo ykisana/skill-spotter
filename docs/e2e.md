@@ -117,4 +117,6 @@ Manual-only skills are skipped (their quality signal is `used` events). `/skill-
 
 ## M7: mod band
 
-Requires Claude Code v2.1.287+ (`claude --version`). Load with `claude --plugin-dir .`, repeat a task until a suggestion is due: instead of the `[skill-spotter] …` notice, a band above the prompt shows `skill-spotter: You've done this 3 times  [Create /name] [Not now]`. Create fills the prompt with `/skill-spotter:draft pN`; Not now snoozes the pattern. On older versions the module doesn't load and the notice appears as before. `claude plugin validate .` lists the module's hooks and calls.
+Requires Claude Code v2.1.287+ (`claude --version`). Load with `claude --plugin-dir .`, repeat a task until a suggestion is due: instead of the `[skill-spotter] …` notice, a band above the prompt shows `skill-spotter: You've done this 3 times  [Create /name] [Not now]`. Create fills the prompt with `/skill-spotter:draft pN`; Not now snoozes the pattern. On older versions the module doesn't load and the notice appears as before. `claude plugin validate .` lists the module's hooks and calls, and `claude plugin test` runs its tests.
+
+If no band appears, start with `claude --debug` and grep the log for `skill-spotter`: a line `hooks module skill-spotter@… loaded` then `session.start settled` with no `hook failed` means the mod ran. While the session is open, `ls ~/.claude/plugins/data/skill-spotter/band/` shows a `<session>.on` file (ADR 0009).
