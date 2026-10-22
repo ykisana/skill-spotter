@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "skill-spotter"
-version = "0.0.1"
+version = "0.0.2"
 description = "Claude Code plugin that spots repeated tasks and suggests saving them as skills."
 readme = "README.md"
 license = { text = "MIT" }
