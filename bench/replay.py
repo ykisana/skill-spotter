@@ -107,7 +107,7 @@ def _occurrence(turns_so_far: List[D.Turn], family: Optional[str]) -> int:
 
 def replay_runtime(turns: List[D.Turn], settings: Optional[Dict[str, str]] = None) -> Dict:
     """Feed every turn through the real hooks; returns metrics and the suggestion log."""
-    from skill_spotter import clock, hookrunner, paths, store
+    from skill_spotter import band, clock, hookrunner, paths, store
 
     started = time.time()
     with tempfile.TemporaryDirectory() as tmp:
@@ -157,7 +157,7 @@ def replay_runtime(turns: List[D.Turn], settings: Optional[Dict[str, str]] = Non
                 seen.append(t)
                 if out:
                     msg = json.loads(out)["systemMessage"]
-                    pid = int(msg.split("(pattern p")[1].split(")")[0])
+                    pid = int(band.parse(msg)["id"][1:])
                     conn = store.connect(paths.db_path(paths.data_dir()))
                     member_ids = [
                         r[0]
