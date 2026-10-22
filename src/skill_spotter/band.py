@@ -3,7 +3,7 @@
 When the mod is loaded, it registers the session (``skill-spotter band register``), the
 Stop hook queues suggestions here instead of printing a ``systemMessage``, and the mod
 fetches them after each turn (``skill-spotter band pending``) to draw
-"You've done this 5× — [Create /name] [Not now]". Without the mod, nothing changes.
+"You've repeated this 5 times: "…"  [Create /name] [Not now]". Without the mod, nothing changes.
 
 The hand-off is a mailbox of small files in a fixed folder, not the database: a mod
 can't learn the plugin's data folder (``CLAUDE_PLUGIN_DATA`` is only set for hooks), so
@@ -24,8 +24,9 @@ BAND_DIR_ENV = "SKILL_SPOTTER_BAND_DIR"
 _STALE_SECONDS = 7 * 86400
 
 _MESSAGE = re.compile(
-    r"done this (?P<what>.+?) \((?P<kind>pattern|workflow) (?P<id>[pw]\d+)[:)].*?save it as "
-    r"/(?P<name>[\w\-]+)"
+    r"^skill-spotter: (?P<summary>.+)\. To save (?:it|them) as /(?P<name>[\w\-]+), "
+    r"run /skill-spotter:draft (?P<id>[pw]\d+)$",
+    re.S,
 )
 
 
@@ -56,9 +57,10 @@ def parse(text: str) -> Dict[str, Any]:
     m = _MESSAGE.search(text)
     if not m:
         return {"text": text}
+    summary = m.group("summary")
     return {
         "text": text,
-        "what": m.group("what"),
+        "summary": summary[:1].upper() + summary[1:],
         "id": m.group("id"),
         "name": m.group("name"),
         "draft": f"/skill-spotter:draft {m.group('id')}",

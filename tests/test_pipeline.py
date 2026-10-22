@@ -71,8 +71,10 @@ def test_same_task_three_times_across_two_sessions_with_different_wording(repo, 
     assert out1["stop"] == "" and out2["stop"] == ""  # 1st and 2nd time: nothing yet
     message = system_message(out3["stop"])
     assert message is not None
-    assert "You've done this 3 times" in message
-    assert "/skill-spotter:draft p" in message
+    # Names skill-spotter, says how often, and quotes the latest prompt (ADR 0009).
+    assert message.startswith("skill-spotter: you've repeated this 3 times: ")
+    assert '"update CHANGELOG.md with what got merged this week"' in message
+    assert "run /skill-spotter:draft p" in message
 
     conn = db()
     rows = conn.execute(
@@ -87,7 +89,7 @@ def test_same_task_three_times_across_two_sessions_with_different_wording(repo, 
     ).fetchone()
     assert pattern["state"] == "suggested"
     assert pattern["count"] == 3 and pattern["session_count"] == 2
-    assert f"/{pattern['suggested_name']}." in message
+    assert f"save it as /{pattern['suggested_name']}," in message
 
 
 def test_no_hook_prints_anything_but_the_stop_suggestion(repo):

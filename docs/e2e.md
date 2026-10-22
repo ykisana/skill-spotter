@@ -19,7 +19,7 @@ Suggestion display (open question 2):
 SKILL_SPOTTER_DEBUG_SUGGEST=1 claude --plugin-dir .
 ```
 
-After each reply, a `[skill-spotter] debug: …` message should appear. Note where and how it's shown.
+After each reply, a `skill-spotter: debug: …` message should appear. Note where and how it's shown.
 
 Hooks firing:
 
@@ -55,7 +55,7 @@ claude --plugin-dir $P -p "update CHANGELOG.md with what changed since the previ
 claude --plugin-dir $P -p "write release notes into the changelog for commits after the latest tag, commit the result" --allowedTools "Bash(git *)" Read Edit --output-format stream-json --verbose | grep "skill-spotter]"
 ```
 
-Expect, after the third run: `Stop says: [skill-spotter] You've done this 3 times (pattern p1). Run /skill-spotter:draft p1 to save it as /update-changelog.`
+Expect, after the third run: `Stop says: skill-spotter: you've repeated this 3 times: "write release notes into the changelog for commits after…". To save it as /update-changelog, run /skill-spotter:draft p1`
 
 ```bash
 $P/scripts/skill-spotter --data-dir ~/.claude/plugins/data/skill-spotter-inline show p1
@@ -102,7 +102,7 @@ Background tier: `scripts/skill-spotter train` runs the job synchronously and pr
 
 ## M5: workflows and shell history
 
-- Do the same three prompts in a row (e.g. list merged PRs → write the changelog entry → open the release PR) in three sessions. After the third session's last step, one suggestion appears: `You've done this 3-step workflow in 3 sessions (workflow wN: …)`. No step is suggested on its own.
+- Do the same three prompts in a row (e.g. list merged PRs → write the changelog entry → open the release PR) in three sessions. After the third session's last step, one suggestion appears: `skill-spotter: you've run these 3 steps together in 3 sessions: /… → /… → /…. To save them as /…, run /skill-spotter:draft wN`. No step is suggested on its own.
 - `scripts/skill-spotter show wN` lists the steps; `/skill-spotter:draft wN` writes one skill that runs them in order.
 - `scripts/skill-spotter scan-shell --project .` imports your zsh/bash history for this project (local only; re-running adds nothing new).
 
@@ -117,6 +117,6 @@ Manual-only skills are skipped (their quality signal is `used` events). `/skill-
 
 ## M7: mod band
 
-Requires Claude Code v2.1.287+ (`claude --version`). Load with `claude --plugin-dir .`, repeat a task until a suggestion is due: instead of the `[skill-spotter] …` notice, a band above the prompt shows `skill-spotter: You've done this 3 times  [Create /name] [Not now]`. Create fills the prompt with `/skill-spotter:draft pN`; Not now snoozes the pattern. On older versions the module doesn't load and the notice appears as before. `claude plugin validate .` lists the module's hooks and calls, and `claude plugin test` runs its tests.
+Requires Claude Code v2.1.287+ (`claude --version`). Load with `claude --plugin-dir .`, repeat a task until a suggestion is due: instead of the `Stop says: skill-spotter: …` notice, a band above the prompt shows `skill-spotter: You've repeated this 3 times: "…"  [Create /name] [Not now]`. Create fills the prompt with `/skill-spotter:draft pN`; Not now snoozes the pattern. On older versions the module doesn't load and the notice appears as before. `claude plugin validate .` lists the module's hooks and calls, and `claude plugin test` runs its tests.
 
 If no band appears, start with `claude --debug` and grep the log for `skill-spotter`: a line `hooks module skill-spotter@… loaded` then `session.start settled` with no `hook failed` means the mod ran. While the session is open, `ls ~/.claude/plugins/data/skill-spotter/band/` shows a `<session>.on` file (ADR 0009).

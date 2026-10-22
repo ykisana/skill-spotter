@@ -84,7 +84,7 @@ def test_job_merges_split_patterns_and_marks_ready(repo, db, at, isolated_data_d
     store.set_setting(conn, "enabled", "1")
     at(4)
     out = Session(repo).turn("something else entirely about the docs site", [bash("npm run docs")])
-    assert "pattern p1" in system_message(out["stop"])
+    assert system_message(out["stop"]).endswith("run /skill-spotter:draft p1")
 
 
 def test_job_leaves_accepted_and_dismissed_patterns_alone(repo, db, at, isolated_data_dir):

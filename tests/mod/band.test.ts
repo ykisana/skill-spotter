@@ -3,8 +3,10 @@
 import { expect, test } from 'claude-code/testing'
 
 const PENDING = {
-  text: 'skill-spotter: you asked for this 3 times (pattern p2). ...',
-  what: '3 times',
+  text:
+    'skill-spotter: you\'ve repeated this 3 times: "update the changelog". ' +
+    'To save it as /update-changelog, run /skill-spotter:draft p2',
+  summary: 'You\'ve repeated this 3 times: "update the changelog"',
   id: 'p2',
   name: 'update-changelog',
   draft: '/skill-spotter:draft p2',
@@ -59,7 +61,8 @@ test('a queued suggestion is drawn above the prompt with both buttons', async ($
   await $.turn.complete(TURN)
   expect(runs[1].slice(1)).toEqual(['band', 'pending', '--session', 'sess-1'])
   const ui = await $.ui.mount(BAND)
-  expect(await ui.find({ type: 'Text', text: /^skill-spotter: / })).toBeDefined()
+  const line = 'skill-spotter: You\'ve repeated this 3 times: "update the changelog"'
+  expect(await ui.find({ type: 'Text', text: line })).toBeDefined()
   expect(await ui.find({ key: 'create' })).toBeDefined()
   expect(await ui.find({ key: 'later' })).toBeDefined()
 })

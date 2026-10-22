@@ -115,7 +115,7 @@ def on_turn_end(event: Event) -> Optional[str]:
         conn.close()
     if text is None and os.environ.get(DEBUG_SUGGEST_ENV) == "1":
         text = (
-            "[skill-spotter] debug: this is where a suggestion would appear "
+            "skill-spotter: debug: this is where a suggestion would appear "
             f"(session {event.get('session_id')})."
         )
     return text

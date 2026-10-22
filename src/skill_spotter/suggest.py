@@ -37,11 +37,25 @@ def _start_of_day(now: float) -> float:
     return time.mktime((local.tm_year, local.tm_mon, local.tm_mday, 0, 0, 0, 0, 0, -1))
 
 
-def message(pattern_id: int, count: int, name: str) -> str:
+QUOTE_CHARS = 60
+
+
+def quote(prompt: Optional[str]) -> str:
+    """The latest prompt, short enough for one line, so the user sees what repeated."""
+    from .capture import filters
+
+    text = " ".join(filters.strip_pasted(prompt or "").split()).replace('"', "'")
+    if len(text) > QUOTE_CHARS:
+        text = text[:QUOTE_CHARS].rsplit(" ", 1)[0].rstrip(" ,.;:") + "…"
+    return f'"{text}"'
+
+
+def message(pattern_id: int, count: int, name: str, prompt: Optional[str] = None) -> str:
+    times = f"{count} time{'s' if count != 1 else ''}"
+    task = f": {quote(prompt)}" if prompt and prompt.strip() else ""
     return (
-        f"[skill-spotter] You've done this {count} time{'s' if count != 1 else ''} "
-        f"(pattern p{pattern_id}). "
-        f"Run /skill-spotter:draft p{pattern_id} to save it as /{name}."
+        f"skill-spotter: you've repeated this {times}{task}. "
+        f"To save it as /{name}, run /skill-spotter:draft p{pattern_id}"
     )
 
 
@@ -60,7 +74,7 @@ def session_or_day_capped(conn: sqlite3.Connection, session_id: str, now: float)
 
 def context_text(suggestion: str) -> str:
     """The suggestion as a factual statement for Claude (``suggest_via = claude``)."""
-    body = suggestion.replace("[skill-spotter] ", "")
+    body = suggestion.replace("skill-spotter: ", "", 1)
     return (
         "skill-spotter (a local Claude Code plugin) noticed a repeated task in this project. "
         f"{body} The user decides whether to do this."
@@ -136,7 +150,7 @@ def maybe_suggest(
         "VALUES(?, 'suggested', ?, ?, ?)",
         (now, pattern_id, session_id, json.dumps({"count": count, "name": name})),
     )
-    return message(pattern_id, count, name)
+    return message(pattern_id, count, name, latest[0] if latest else None)
 
 
 def suggest_ready(

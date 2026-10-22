@@ -32,3 +32,11 @@ Claude Code prefixes every hook `systemMessage` with `<Event> says:`. Neither th
 ## Chit-chat became a pattern
 
 "hey claude, say hi" normalizes to `claude say`. A pattern with no meaningful actions is generic only when it has fewer than 2 strong words, and here "claude" and "say" counted as 2. Decision: `claude`, `say`, `hello` and `thx` are stop words. Addressing the assistant is never part of a task. The CI replay is unchanged (precision, recall and false suggestions are identical before and after).
+
+## The message didn't say what repeated
+
+`You've done this 3 times (pattern p2)` gave no way to tell *what* "this" was, and `pattern p2` is internal vocabulary. Decision:
+- **Patterns:** `skill-spotter: you've repeated this 3 times: "<latest prompt>". To save it as /<name>, run /skill-spotter:draft p2`.
+- **Workflows:** `skill-spotter: you've run these 3 steps together in 3 sessions: /a → /b → /c. To save them as /<name>, run /skill-spotter:draft w7`.
+- **The quote:** the latest prompt (already redacted), on one line, without pasted blocks, cut at a word within 60 characters.
+- **The band** shows the part before "To save…" next to its buttons. The fallback message starts with `skill-spotter:` because Claude Code's `Stop says:` label can't be changed.

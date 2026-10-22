@@ -1,6 +1,6 @@
 // skill-spotter mod (M7): show suggestions as a band above the prompt, with buttons.
 //
-//   You've done this 5 times — [Create /weekly-changelog]  [Not now]
+//   skill-spotter: You've repeated this 5 times: "…"  [Create /weekly-changelog]  [Not now]
 //
 // Needs Claude Code with mods (v2.1.287+). On older versions this module doesn't load,
 // the session never registers a band, and the Stop hook keeps using systemMessage.
@@ -8,7 +8,7 @@
 
 type Pending = {
   text: string
-  what?: string
+  summary?: string
   id?: string
   name?: string
   draft?: string
@@ -53,7 +53,7 @@ export function register(on: any) {
       pending = null
       $.ui.invalidate('ui.render')
     }
-    const label = pending.what ? `You've done this ${pending.what}` : pending.text
+    const label = pending.summary ?? pending.text.replace(/^skill-spotter: /, '')
     return Box({
       flexDirection: 'row',
       columnGap: 2,

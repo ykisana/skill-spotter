@@ -87,7 +87,8 @@ def test_three_step_workflow_in_three_sessions_gives_one_suggestion(repo, db, at
         s.end()
     assert len(messages) == 1, messages
     msg = messages[0]
-    assert "3-step workflow in 3 sessions" in msg and "/skill-spotter:draft w" in msg
+    assert "run these 3 steps together in 3 sessions: /" in msg
+    assert "run /skill-spotter:draft w" in msg
     conn = db()
     # suggested, then snoozed when the session ended without the user acting on it
     wf = conn.execute("SELECT * FROM workflows WHERE state = 'snoozed'").fetchone()
@@ -155,4 +156,4 @@ def test_a_fragmented_middle_step_still_gives_a_single_workflow_suggestion(repo,
             system_message(o["stop"]) for o in run_workflow(s, repo, wording[k]) if o["stop"]
         ]
         s.end()
-    assert len(messages) == 1 and "workflow" in messages[0], messages
+    assert len(messages) == 1 and "/skill-spotter:draft w" in messages[0], messages

@@ -117,7 +117,7 @@ def test_scripted_lifecycle(repo, db, at, capsys):
 
     at(15)  # snooze over
     s4 = Session(repo)
-    assert "pattern p" in system_message(changelog(s4, repo, 4)["stop"])
+    assert "run /skill-spotter:draft p" in system_message(changelog(s4, repo, 4)["stop"])
     s4.end()
     assert tuple(state(db, a)) == ("dismissed", 2)
 
@@ -132,7 +132,7 @@ def test_scripted_lifecycle(repo, db, at, capsys):
     msg = system_message(deploy(s6, repo, 3)["stop"])
     b = pattern_of(db, "deploy the api")
     name = db().execute("SELECT suggested_name FROM patterns WHERE id = ?", (b,)).fetchone()[0]
-    assert f"/{name}." in msg
+    assert f"save it as /{name}," in msg
     skill = os.path.join(repo, ".claude", "skills", name, "SKILL.md")
     os.makedirs(os.path.dirname(skill))
     with open(skill, "w") as f:

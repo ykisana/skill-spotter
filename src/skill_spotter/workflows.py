@@ -231,8 +231,8 @@ def maybe_suggest(
         )
         chain = " → ".join(f"/{n}" for n in _step_names(conn, steps))
         return (
-            f"[skill-spotter] You've done this {len(steps)}-step workflow in "
-            f"{w['session_count']} sessions (workflow w{w['id']}: {chain}). "
-            f"Run /skill-spotter:draft w{w['id']} to save it as /{name}."
+            f"skill-spotter: you've run these {len(steps)} steps together in "
+            f"{w['session_count']} sessions: {chain}. "
+            f"To save them as /{name}, run /skill-spotter:draft w{w['id']}"
         )
     return None

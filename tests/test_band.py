@@ -21,20 +21,22 @@ def changelog(s, repo, prompt):
 
 
 def test_parse_suggestion_text():
-    d = band.parse(
-        "[skill-spotter] You've done this 5 times (pattern p42). Run /skill-spotter:draft p42 "
-        "to save it as /weekly-changelog."
-    )
-    assert (
-        d["id"] == "p42"
-        and d["name"] == "weekly-changelog"
-        and d["draft"] == "/skill-spotter:draft p42"
-    )
+    from skill_spotter import suggest
+
+    d = band.parse(suggest.message(42, 5, "weekly-changelog", "write the weekly changelog."))
+    assert d == {
+        "text": d["text"],
+        "summary": 'You\'ve repeated this 5 times: "write the weekly changelog."',
+        "id": "p42",
+        "name": "weekly-changelog",
+        "draft": "/skill-spotter:draft p42",
+    }
     w = band.parse(
-        "[skill-spotter] You've done this 3-step workflow in 3 sessions (workflow w7: /a → /b). "
-        "Run /skill-spotter:draft w7 to save it as /ship-flow."
+        "skill-spotter: you've run these 2 steps together in 3 sessions: /a → /b. "
+        "To save them as /ship-flow, run /skill-spotter:draft w7"
     )
     assert w["id"] == "w7" and w["name"] == "ship-flow"
+    assert w["summary"] == "You've run these 2 steps together in 3 sessions: /a → /b"
 
 
 def test_band_session_gets_no_system_message_but_a_pending_band(

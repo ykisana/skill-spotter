@@ -5,8 +5,8 @@ A Claude Code plugin that notices tasks you keep repeating and suggests saving t
 ```
 You:    write release notes into the changelog for commits after the latest tag, commit the result
 Claude: (does the task)
-        [skill-spotter] You've done this 3 times (pattern p1). Run /skill-spotter:draft p1
-                        to save it as /update-changelog.
+        skill-spotter: You've repeated this 3 times: "write release notes into the
+        changelog for commits after…"   [Create /update-changelog]  [Not now]
 You:    /skill-spotter:draft p1
 Claude: Saved. Next time: /update-changelog
 ```
@@ -90,7 +90,12 @@ Other numbers:
 
 ## Optional: band above the prompt (mods)
 
-With Claude Code v2.1.287+, the bundled mod shows suggestions as a band above the prompt with **[Create /name]** and **[Not now]** buttons instead of a message. On older versions it doesn't load, and you get the message as usual.
+With Claude Code v2.1.287+, the bundled mod shows suggestions as a band above the prompt with **[Create /name]** and **[Not now]** buttons instead of a message. On older versions it doesn't load, and you get a message under Claude's reply instead (Claude Code labels every hook message `Stop says:`):
+
+```
+Stop says: skill-spotter: you've repeated this 3 times: "write release notes into the changelog
+           for commits after…". To save it as /update-changelog, run /skill-spotter:draft p1
+```
 
 ## Privacy
 
