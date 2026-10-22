@@ -28,3 +28,7 @@ Decision:
 ## "Stop says:" can't be renamed
 
 Claude Code prefixes every hook `systemMessage` with `<Event> says:`. Neither the hooks reference, the plugin manifest reference nor the changelog (up to 2.1.308) has a field to change it. The band is the only way to show suggestions under the plugin's own name. Without the mod, the message must name skill-spotter itself.
+
+## Chit-chat became a pattern
+
+"hey claude, say hi" normalizes to `claude say`. A pattern with no meaningful actions is generic only when it has fewer than 2 strong words, and here "claude" and "say" counted as 2. Decision: `claude`, `say`, `hello` and `thx` are stop words. Addressing the assistant is never part of a task. The CI replay is unchanged (precision, recall and false suggestions are identical before and after).

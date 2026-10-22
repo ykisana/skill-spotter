@@ -83,7 +83,7 @@ STOP_WORDS = frozenset(
     shall may might must please pls just also too very really so some any all each every
     more most other such only own same than now get got let lets let's make sure ok okay
     hey hi thanks thank need want like go going again new one two via per as not no
-    yes run""".split()
+    yes run claude say hello thx""".split()
 )
 
 _TOKEN = re.compile(r"<[a-z]+>|[a-z][a-z0-9_]*")

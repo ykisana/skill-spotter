@@ -213,6 +213,26 @@ def test_generic_patterns_are_never_suggested(repo, db):
     assert all(o["stop"] == "" for o in outs)
 
 
+def test_chit_chat_is_never_suggested(repo, db):
+    # First live run (ADR 0009): "hey claude, say hi" three times in two sessions,
+    # one of them with an unrelated check in between, became /sqlite3.
+    s1, s2 = Session(repo), Session(repo)
+    outs = [
+        s1.turn("hey claude can you say hi", [bash("sqlite3 x.db 'select 1'")]),
+        s2.turn("hey claude, say hi", []),
+        s2.turn("hello claude, can you say hi please", []),
+        s1.turn("hey claude, say hi", []),
+    ]
+    assert all(o["stop"] == "" for o in outs)
+
+
+def test_addressing_claude_is_not_a_task_word():
+    from skill_spotter.capture import normalize_text
+
+    assert normalize_text.normalize("hey claude, say hi") == []
+    assert normalize_text.normalize("claude, update the changelog") == ["update", "changelog"]
+
+
 def test_danger_flag_reaches_the_pattern(repo, db):
     s1, s2 = Session(repo), Session(repo)
     for i, s in enumerate((s1, s1, s2)):
