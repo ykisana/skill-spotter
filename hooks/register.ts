@@ -62,7 +62,7 @@ export function register(on: any) {
         pending.draft
           ? Button({
               key: 'create',
-              label: `Create /${pending.name}`,
+              label: pending.name ? `Create /${pending.name}` : 'Create skill',
               hotkey: '1',
               onPress: async () => {
                 await $.prompt.fill({ text: pending!.draft })

@@ -15,6 +15,7 @@ import json
 import sqlite3
 from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
+from . import naming
 from .capture import normalize_text
 from .capture.normalize_actions import turn_fingerprint
 from .match import baseline
@@ -267,8 +268,16 @@ def finalize_turn(conn: sqlite3.Connection, prompt_id: str, now: float) -> Optio
             content = normalize_text.content_words(turn["prompt_redacted"] or "")
             words = {w: 1.0 for w in set(content)}
             first = {content[0]: 1.0} if content else {}
+            lead = {w: 1.0 for w in set(content[: naming.LEAD_WORDS])}
             if pattern_id is None:
-                rep = {"tokens": fingerprint, "text": text, "words": words, "first": first, "n": 1}
+                rep = {
+                    "tokens": fingerprint,
+                    "text": text,
+                    "words": words,
+                    "first": first,
+                    "lead": lead,
+                    "n": 1,
+                }
                 cur = conn.execute(
                     "INSERT INTO patterns(project_key, representative_json, count, session_count, "
                     "first_seen, last_seen, danger, method_version) VALUES(?, ?, 1, 1, ?, ?, ?, ?)",
@@ -287,6 +296,7 @@ def finalize_turn(conn: sqlite3.Connection, prompt_id: str, now: float) -> Optio
                     "text": _average(old.get("text", {}), text, n),
                     "words": _average(old.get("words", {}), words, n),
                     "first": _average(old.get("first", {}), first, n),
+                    "lead": _average(old.get("lead", {}), lead, n),
                     "n": n + 1,
                 }
                 conn.execute(
@@ -329,7 +339,7 @@ def rebuild_representative(conn: sqlite3.Connection, pattern_id: int) -> Dict[st
         "danger FROM turns WHERE pattern_id = ? ORDER BY ts_start",
         (pattern_id,),
     ).fetchall()
-    rep: Dict[str, Any] = {"tokens": {}, "text": {}, "words": {}, "first": {}, "n": 0}
+    rep: Dict[str, Any] = {"tokens": {}, "text": {}, "words": {}, "first": {}, "lead": {}, "n": 0}
     for n, row in enumerate(rows):
         content = normalize_text.content_words(row["prompt_redacted"] or "")
         new = {
@@ -337,8 +347,9 @@ def rebuild_representative(conn: sqlite3.Connection, pattern_id: int) -> Dict[st
             "text": {g: 1.0 for g in normalize_text.ngrams((row["prompt_norm"] or "").split())},
             "words": {w: 1.0 for w in set(content)},
             "first": {content[0]: 1.0} if content else {},
+            "lead": {w: 1.0 for w in set(content[: naming.LEAD_WORDS])},
         }
-        for key in ("tokens", "text", "words", "first"):
+        for key in ("tokens", "text", "words", "first", "lead"):
             rep[key] = _average(rep[key], new[key], n)
         rep["n"] = n + 1
     if rows:

@@ -203,14 +203,18 @@ def maybe_suggest(
             tokens.update(rep.get("tokens", {}))
         root = project_key if project_key != "?" else None
         first = reps[0].get("first", {}) if reps else {}
-        name = w["suggested_name"] or naming.suggest_name(
-            {"words": merged, "first": first, "tokens": tokens}, root
-        )
+        lead = reps[0].get("lead", {}) if reps else {}
+        if w["suggested_name"]:
+            name, weak = w["suggested_name"], False
+        else:
+            name, weak = naming.guess(
+                {"words": merged, "first": first, "lead": lead, "tokens": tokens}, root
+            )
         if not name.endswith("-flow"):
             name = f"{name}-flow"[:40]
         conn.execute(
             "UPDATE workflows SET state = 'suggested', suggested_name = ? WHERE id = ?",
-            (name, w["id"]),
+            (None if weak else name, w["id"]),
         )
         # sub-sequences are covered by this one; step patterns are part of it now
         for other_id, other_json in conn.execute(
@@ -233,6 +237,7 @@ def maybe_suggest(
         return (
             f"skill-spotter: you've run these {len(steps)} steps together in "
             f"{w['session_count']} sessions: {chain}. "
-            f"To save them as /{name}, run /skill-spotter:draft w{w['id']}"
+            f"To save them as {suggest.save_as(None if weak else name)}, "
+            f"run /skill-spotter:draft w{w['id']}"
         )
     return None

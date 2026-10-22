@@ -48,10 +48,11 @@ def heuristic_names(turns):
     out, info = {}, {}
     for fam, items in by_fam.items():
         n = len(items)
-        words, first, tokens = Counter(), Counter(), defaultdict(float)
+        words, first, lead, tokens = Counter(), Counter(), Counter(), defaultdict(float)
         for t in items:
             content = nt.content_words(t.prompt)
             words.update(set(content))
+            lead.update(set(content[: naming.LEAD_WORDS]))
             if content:
                 first[content[0]] += 1
             fp = turn_fingerprint(
@@ -67,6 +68,7 @@ def heuristic_names(turns):
         rep = {
             "words": {w: c / n for w, c in words.items()},
             "first": {w: c / n for w, c in first.items()},
+            "lead": {w: c / n for w, c in lead.items()},
             "tokens": dict(tokens),
         }
         hint = nt.content_words(items[-1].prompt)

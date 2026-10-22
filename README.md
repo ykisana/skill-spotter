@@ -72,7 +72,9 @@ The CLI (`scripts/skill-spotter`) adds the following:
 3. **Suggest.** A suggestion appears when a task has happened 3 times in 2+ sessions within 30 days, at most once per session. Trivial patterns (only `git status` or file reads) are never suggested. Anything with risky steps (`--force`, `deploy`, `rm -rf`) becomes a skill that only runs when you type it, and that asks before the risky step.
 4. **Follow up.** If you ignore a suggestion it's snoozed for 14 days, then dropped. Skills you create are tracked so `status` can show whether you use them.
 
-On Claude Code 2.1.287+, suggestions appear in a band above the prompt with **[Create /name]** and **[Not now]** buttons. On older versions they appear as a message under Claude's reply, which Claude Code labels `Stop says:`.
+A suggestion quotes your latest prompt, so you can see what repeated, and proposes a name when the prompts give a good one. Otherwise it offers to save "a skill", and Claude picks the name when drafting it. Claude can rename a proposed name too.
+
+On Claude Code 2.1.287+, suggestions appear in a band above the prompt with **[Create /name]** (or **[Create skill]**) and **[Not now]** buttons. On older versions they appear as a message under Claude's reply, which Claude Code labels `Stop says:`.
 
 More detail is in [docs/method-lab.md](docs/method-lab.md) (how the matcher was chosen) and [docs/adr](docs/adr) (every design decision).
 

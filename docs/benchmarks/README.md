@@ -175,7 +175,7 @@ Can the matcher find an earlier turn of the same task? Recall@10 on test, latenc
 
 ## Naming
 
-Judge scores (1-5, blind, Claude Sonnet) over 38 test families: runtime heuristic 2.66 (0.368 rated 4+), Claude reference 4.84. Exact match 0.158. Local LLM: not evaluated (no Ollama/llama.cpp; disk nearly full). Claude refines the name when drafting, so the heuristic only needs to be a sensible default.
+Judge scores (1-5, blind, Claude Sonnet) over 38 test families: runtime heuristic 2.87 (0.368 rated 4+), Claude reference 4.79. Exact match 0.158. Local LLM: not evaluated (no Ollama/llama.cpp; disk nearly full). Claude refines the name when drafting, so the heuristic only needs to be a sensible default.
 
 ## Ablation: what each change did (real-hook replay)
 

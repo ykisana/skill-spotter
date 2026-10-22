@@ -1,33 +1,33 @@
 {
  "summary": {
   "families": 60,
-  "heuristic_mean": 2.47,
-  "claude_mean": 4.75,
-  "exact_match": 0.1,
-  "heuristic_ge4": 0.25,
+  "heuristic_mean": 2.7,
+  "claude_mean": 4.9,
+  "exact_match": 0.117,
+  "heuristic_ge4": 0.283,
   "local_llm": "not evaluated (no Ollama/llama.cpp; disk nearly full)",
   "split": "dev"
  },
  "rows": [
   {
    "family": "f001",
-   "heuristic": "git-push",
+   "heuristic": "open-push",
    "claude": "open-pr",
    "score_claude": 5,
-   "score_heuristic": 1
+   "score_heuristic": 3
   },
   {
    "family": "f002",
    "heuristic": "rebase-conflicts",
    "claude": "rebase-branch",
-   "score_claude": 4,
-   "score_heuristic": 3
+   "score_claude": 5,
+   "score_heuristic": 4
   },
   {
    "family": "f003",
    "heuristic": "git-push",
    "claude": "cherry-pick-hotfix",
-   "score_heuristic": 1,
+   "score_heuristic": 2,
    "score_claude": 5
   },
   {
@@ -46,9 +46,9 @@
   },
   {
    "family": "f007",
-   "heuristic": "gh-pr-view",
+   "heuristic": "diff-reviewers",
    "claude": "assign-reviewers",
-   "score_heuristic": 1,
+   "score_heuristic": 2,
    "score_claude": 5
   },
   {
@@ -62,7 +62,7 @@
    "family": "f011",
    "heuristic": "tag-release-github",
    "claude": "create-github-release",
-   "score_heuristic": 4,
+   "score_heuristic": 3,
    "score_claude": 5
   },
   {
@@ -74,16 +74,16 @@
   },
   {
    "family": "f013",
-   "heuristic": "agvtool",
+   "heuristic": "build-testflight",
    "claude": "testflight-build",
-   "score_claude": 5,
-   "score_heuristic": 2
+   "score_claude": 4,
+   "score_heuristic": 5
   },
   {
    "family": "f014",
    "heuristic": "git-tag",
    "claude": "backport-fix",
-   "score_heuristic": 2,
+   "score_heuristic": 1,
    "score_claude": 5
   },
   {
@@ -102,108 +102,108 @@
   },
   {
    "family": "f017",
-   "heuristic": "pytest",
+   "heuristic": "coverage",
    "claude": "improve-coverage",
-   "score_heuristic": 1,
+   "score_heuristic": 3,
    "score_claude": 5
   },
   {
    "family": "f020",
-   "heuristic": "pytest",
+   "heuristic": "reset-find-bisect",
    "claude": "bisect-regression",
    "score_claude": 5,
-   "score_heuristic": 1
+   "score_heuristic": 2
   },
   {
    "family": "f025",
-   "heuristic": "git-tag",
+   "heuristic": "tag-canary",
    "claude": "canary-deploy",
-   "score_heuristic": 1,
+   "score_heuristic": 2,
    "score_claude": 5
   },
   {
    "family": "f026",
-   "heuristic": "git-pull",
+   "heuristic": "run-staging",
    "claude": "run-migration",
    "score_heuristic": 1,
    "score_claude": 5
   },
   {
    "family": "f027",
-   "heuristic": "curl",
+   "heuristic": "run-staging",
    "claude": "smoke-test",
    "score_claude": 5,
-   "score_heuristic": 2
+   "score_heuristic": 1
   },
   {
    "family": "f029",
    "heuristic": "alembic",
    "claude": "generate-migration",
    "score_claude": 5,
-   "score_heuristic": 2
+   "score_heuristic": 3
   },
   {
    "family": "f030",
-   "heuristic": "psql",
+   "heuristic": "run-migrations",
    "claude": "run-migrations",
-   "score_heuristic": 1,
+   "score_heuristic": 5,
    "score_claude": 5
   },
   {
    "family": "f032",
    "heuristic": "reset-local",
    "claude": "reset-db",
-   "score_claude": 4,
+   "score_claude": 5,
    "score_heuristic": 3
   },
   {
    "family": "f033",
    "heuristic": "write-backfill",
    "claude": "backfill-column",
-   "score_claude": 4,
+   "score_claude": 5,
    "score_heuristic": 4
   },
   {
    "family": "f037",
-   "heuristic": "xcrun",
+   "heuristic": "add-repro",
    "claude": "reproduce-crash",
    "score_claude": 5,
-   "score_heuristic": 1
+   "score_heuristic": 2
   },
   {
    "family": "f038",
    "heuristic": "ab",
    "claude": "profile-endpoint",
    "score_claude": 5,
-   "score_heuristic": 2
+   "score_heuristic": 1
   },
   {
    "family": "f039",
-   "heuristic": "kubectl-logs",
+   "heuristic": "memory-2",
    "claude": "investigate-oom",
-   "score_heuristic": 2,
+   "score_heuristic": 1,
    "score_claude": 5
   },
   {
    "family": "f041",
    "heuristic": "check-sentry",
    "claude": "investigate-errors",
-   "score_claude": 5,
+   "score_claude": 4,
    "score_heuristic": 3
   },
   {
    "family": "f042",
    "heuristic": "check-slow-query",
    "claude": "find-slow-query",
-   "score_heuristic": 4,
+   "score_heuristic": 3,
    "score_claude": 5
   },
   {
    "family": "f043",
-   "heuristic": "update-openapi",
+   "heuristic": "docs",
    "claude": "document-endpoint",
    "score_claude": 5,
-   "score_heuristic": 3
+   "score_heuristic": 2
   },
   {
    "family": "f045",
@@ -230,35 +230,35 @@
    "family": "f048",
    "heuristic": "update-env",
    "claude": "update-env-docs",
-   "score_claude": 3,
-   "score_heuristic": 2
+   "score_claude": 5,
+   "score_heuristic": 3
   },
   {
    "family": "f050",
-   "heuristic": "psql",
+   "heuristic": "report-weekly",
    "claude": "weekly-report",
-   "score_heuristic": 1,
+   "score_heuristic": 4,
    "score_claude": 5
   },
   {
    "family": "f051",
-   "heuristic": "python",
+   "heuristic": "update-data",
    "claude": "audit-data-quality",
    "score_claude": 5,
    "score_heuristic": 1
   },
   {
    "family": "f053",
-   "heuristic": "psql",
+   "heuristic": "update-csv",
    "claude": "export-query",
-   "score_claude": 5,
-   "score_heuristic": 2
+   "score_claude": 4,
+   "score_heuristic": 1
   },
   {
    "family": "f054",
-   "heuristic": "psql",
+   "heuristic": "test-readout",
    "claude": "analyze-ab-test",
-   "score_heuristic": 1,
+   "score_heuristic": 3,
    "score_claude": 5
   },
   {
@@ -272,64 +272,64 @@
    "family": "f057",
    "heuristic": "rotate-restart",
    "claude": "rotate-secret",
-   "score_claude": 3,
-   "score_heuristic": 5
+   "score_claude": 5,
+   "score_heuristic": 4
   },
   {
    "family": "f058",
-   "heuristic": "terraform-init",
+   "heuristic": "add-plan-workspace",
    "claude": "terraform-apply",
-   "score_heuristic": 2,
+   "score_heuristic": 1,
    "score_claude": 4
   },
   {
    "family": "f059",
-   "heuristic": "kubectl-rollout-status",
+   "heuristic": "rollout-logs",
    "claude": "fix-crashloop",
-   "score_claude": 4,
+   "score_claude": 5,
    "score_heuristic": 2
   },
   {
    "family": "f060",
    "heuristic": "build-push",
    "claude": "deploy-image",
-   "score_claude": 3,
-   "score_heuristic": 4
+   "score_claude": 4,
+   "score_heuristic": 3
   },
   {
    "family": "f062",
    "heuristic": "bump-chart",
    "claude": "bump-helm-release",
-   "score_heuristic": 4,
-   "score_claude": 4
+   "score_heuristic": 3,
+   "score_claude": 5
   },
   {
    "family": "f065",
-   "heuristic": "diff-review",
+   "heuristic": "review-security",
    "claude": "security-review-pr",
    "score_claude": 5,
-   "score_heuristic": 3
+   "score_heuristic": 4
   },
   {
    "family": "f068",
-   "heuristic": "npm-ci",
+   "heuristic": "fix-failing",
    "claude": "fix-pr-ci",
-   "score_heuristic": 1,
+   "score_heuristic": 3,
    "score_claude": 5
   },
   {
    "family": "f069",
    "heuristic": "gh-pr-diff",
    "claude": "review-migration",
-   "score_heuristic": 2,
+   "score_heuristic": 1,
    "score_claude": 5
   },
   {
    "family": "f072",
-   "heuristic": "pytest",
+   "heuristic": "sync-cryptography",
    "claude": "patch-vulnerability",
    "score_claude": 5,
-   "score_heuristic": 2
+   "score_heuristic": 1
   },
   {
    "family": "f074",
@@ -342,14 +342,14 @@
    "family": "f075",
    "heuristic": "bump-base-image",
    "claude": "bump-base-image",
-   "score_heuristic": 4,
-   "score_claude": 4
+   "score_heuristic": 5,
+   "score_claude": 5
   },
   {
    "family": "f077",
    "heuristic": "sync-reqwest",
    "claude": "align-crate-version",
-   "score_heuristic": 2,
+   "score_heuristic": 1,
    "score_claude": 5
   },
   {
@@ -375,7 +375,7 @@
   },
   {
    "family": "f083",
-   "heuristic": "pnpm-test",
+   "heuristic": "test-job",
    "claude": "scaffold-worker",
    "score_claude": 5,
    "score_heuristic": 1
@@ -389,9 +389,9 @@
   },
   {
    "family": "f085",
-   "heuristic": "add-release-testflight",
+   "heuristic": "build-release-testflight",
    "claude": "release-testflight",
-   "score_heuristic": 3,
+   "score_heuristic": 4,
    "score_claude": 5
   },
   {
@@ -403,16 +403,16 @@
   },
   {
    "family": "f090",
-   "heuristic": "fastlane-frameit",
+   "heuristic": "run-app-screenshots",
    "claude": "capture-screenshots",
    "score_heuristic": 3,
-   "score_claude": 4
+   "score_claude": 5
   },
   {
    "family": "f091",
    "heuristic": "bump-build",
    "claude": "cut-app-release",
-   "score_heuristic": 3,
+   "score_heuristic": 2,
    "score_claude": 5
   },
   {
@@ -424,9 +424,9 @@
   },
   {
    "family": "f097",
-   "heuristic": "get-page",
+   "heuristic": "create-notion-linear",
    "claude": "spec-to-linear",
-   "score_heuristic": 1,
+   "score_heuristic": 2,
    "score_claude": 5
   }
  ]

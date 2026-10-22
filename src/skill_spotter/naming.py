@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Iterable, List, Mapping, Optional, Sequence, Set
+from typing import Iterable, List, Mapping, Optional, Sequence, Set, Tuple
 
 VERBS = (
     "write update create generate deploy release publish ship run fix add bump upgrade review "
@@ -62,6 +62,9 @@ BUILTIN_COMMANDS = frozenset(
     terminal-setup todos upgrade usage vim loop goal schedule fast effort theme feedback
     reload-skills skills plan tasks agents remote-control artifacts""".split()
 )
+
+LEAD_WORDS = 3
+LEAD_MIN = 0.3
 
 _FILLER = {"thing", "stuff", "something", "code", "file", "files", "please", "quick"}
 
@@ -116,6 +119,7 @@ def from_words(
     *,
     first_words: Mapping[str, float] = None,
     tokens: Mapping[str, float] = None,
+    lead_words: Mapping[str, float] = None,
 ) -> Optional[str]:
     """verb + (qualifier) + object, tuned against a blind Claude judge (bench.naming).
 
@@ -135,6 +139,8 @@ def from_words(
     # Verbs elsewhere are often nouns in context ("since the last tag").
     verb, verb_word = None, None
     candidates = [(f, w) for w, f in (first_words or {}).items() if f >= 0.3 and _verb(w)]
+    if not candidates:  # "can you push this branch ...": a verb among the first few words
+        candidates = [(f, w) for w, f in (lead_words or {}).items() if f >= LEAD_MIN and _verb(w)]
     if candidates:
         _, verb_word = max(candidates)
         verb = _verb(verb_word)
@@ -143,7 +149,12 @@ def from_words(
     edited = _edited_stems(tokens)
 
     def usable(w):
-        return w not in GENERIC_NOUNS and w != verb_word and _verb(w) != verb and w not in commands
+        return (
+            w not in GENERIC_NOUNS
+            and w != verb_word
+            and (verb is None or _verb(w) != verb)
+            and w not in commands
+        )
 
     objects = [w for w in edited if w in strong and usable(w)]
     if not objects:
@@ -211,28 +222,40 @@ def existing_skill_names(project_root: Optional[str]) -> Set[str]:
     return names
 
 
+def guess(
+    representative: Mapping,
+    project_root: Optional[str],
+    taken: Iterable[str] = (),
+    order_hint: Sequence[str] = (),
+) -> Tuple[str, bool]:
+    """(name, weak). A weak name is a placeholder not worth showing the user: it comes
+    from a command (``/psql``) rather than the prompts' words, is a lone noun
+    (``/prod``), or needed a number to avoid a clash (``/memory-2``). Claude names the
+    skill when drafting either way."""
+    worded = from_words(
+        representative.get("words", {}),
+        order_hint,
+        first_words=representative.get("first", {}),
+        tokens=representative.get("tokens", {}),
+        lead_words=representative.get("lead", {}),
+    )
+    base = worded or from_tokens(representative.get("tokens", {})) or "repeated-task"
+    weak = worded is None or "-" not in worded
+    unavailable = BUILTIN_COMMANDS | existing_skill_names(project_root) | set(taken)
+    name, n = base, 2
+    while name in unavailable:
+        name, weak = f"{base}-{n}", True
+        n += 1
+    return name, weak
+
+
 def suggest_name(
     representative: Mapping,
     project_root: Optional[str],
     taken: Iterable[str] = (),
     order_hint: Sequence[str] = (),
 ) -> str:
-    base = (
-        from_words(
-            representative.get("words", {}),
-            order_hint,
-            first_words=representative.get("first", {}),
-            tokens=representative.get("tokens", {}),
-        )
-        or from_tokens(representative.get("tokens", {}))
-        or "repeated-task"
-    )
-    unavailable = BUILTIN_COMMANDS | existing_skill_names(project_root) | set(taken)
-    name, n = base, 2
-    while name in unavailable:
-        name = f"{base}-{n}"
-        n += 1
-    return name
+    return guess(representative, project_root, taken, order_hint)[0]
 
 
 def skill_dirs(project_root: Optional[str]) -> List[str]:

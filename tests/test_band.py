@@ -121,3 +121,19 @@ def test_hook_without_band_still_prints_the_system_message(tmp_path):
     out = changelog(s2, repo, "write release notes for merged pull requests")
     assert "skill-spotter" in out["stop"]
     assert band.pop(s2.session_id) is None
+
+
+def test_parse_a_suggestion_without_a_name():
+    from skill_spotter import suggest
+
+    d = band.parse(suggest.message(9, 3, None, "refresh the warehouse figures"))
+    assert d["id"] == "p9" and d["name"] is None and d["draft"] == "/skill-spotter:draft p9"
+    assert d["summary"] == 'You\'ve repeated this 3 times: "refresh the warehouse figures"'
+
+
+def test_parse_a_workflow_without_a_name():
+    w = band.parse(
+        "skill-spotter: you've run these 2 steps together in 3 sessions: /a → /b. "
+        "To save them as a skill, run /skill-spotter:draft w7"
+    )
+    assert w["id"] == "w7" and w["name"] is None and w["draft"] == "/skill-spotter:draft w7"

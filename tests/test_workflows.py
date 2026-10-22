@@ -89,6 +89,8 @@ def test_three_step_workflow_in_three_sessions_gives_one_suggestion(repo, db, at
     msg = messages[0]
     assert "run these 3 steps together in 3 sessions: /" in msg
     assert "run /skill-spotter:draft w" in msg
+    # named from the steps' words, not from the first command (was /gh-pr-list-flow)
+    assert "To save them as /update-merged-changelog-flow, " in msg
     conn = db()
     # suggested, then snoozed when the session ended without the user acting on it
     wf = conn.execute("SELECT * FROM workflows WHERE state = 'snoozed'").fetchone()

@@ -40,3 +40,31 @@ Claude Code prefixes every hook `systemMessage` with `<Event> says:`. Neither th
 - **Workflows:** `skill-spotter: you've run these 3 steps together in 3 sessions: /a → /b → /c. To save them as /<name>, run /skill-spotter:draft w7`.
 - **The quote:** the latest prompt (already redacted), on one line, without pasted blocks, cut at a word within 60 characters.
 - **The band** shows the part before "To save…" next to its buttons. The fallback message starts with `skill-spotter:` because Claude Code's `Stop says:` label can't be changed.
+
+## Names
+
+`/sqlite3` came from a bug. In `naming.from_words`, `usable()` compared `_verb(w) != verb`, and when no prompt started with a verb both sides were `None`. So every word was rejected, and the name fell back to the first command (`/psql`, `/pytest`, `/git-push`). The blind-judge benchmark scored these 1/5.
+
+Changes, each checked against the Claude reference names stored by `bench.naming` (share of families where the heuristic shares a word with Claude's name):
+
+| | dev | test |
+|---|---|---|
+| before | 0.43 | 0.66 |
+| bug fixed | 0.57 | 0.79 |
+| + verb among the first 3 content words (`lead` in the representative) | 0.62 | 0.84 |
+| + `run` kept as a naming verb (still a stop word for matching and the generic check) | 0.63 | 0.84 |
+
+Blind judge (Sonnet, 1–5), re-run:
+- **dev:** heuristic 2.47 → 2.70;
+- **test:** heuristic 2.66 → 2.87;
+- **Claude's own names:** 4.8–4.9.
+
+A word heuristic can't name paraphrased tasks well, so:
+- **Weak guesses aren't shown.** `naming.guess` flags a name as weak if:
+  - it came from a command rather than the prompts' words;
+  - it is a lone noun (`/prod`);
+  - it needed a number to avoid a clash (`/memory-2`).
+
+  The suggestion then says "To save it as a skill", the band button reads **[Create skill]**, and the name isn't stored, so a re-suggestion derives it again. In the judged sets, the hidden names averaged 1.3–1.6 and the names still shown averaged 2.9–3.0.
+- **Claude names the skill when drafting.** `/skill-spotter:draft` now picks the name in its own step, before asking who may run the skill. It keeps the guess only if it's already the name the user would type. The final names are therefore Claude's, which judged 4.8.
+- **Patterns created before this change** have no `lead` and fall back to first-word verbs until they're rebuilt.

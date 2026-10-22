@@ -277,3 +277,25 @@ def test_schema_upgrade_from_v1(isolated_data_dir):
     raw.close()
     conn = store.connect(path)
     assert store.schema_version(conn) == store.SCHEMA_VERSION
+
+
+def test_a_weak_name_is_not_shown_or_kept(repo, db):
+    # Three wordings with nothing in common but the work: the only name available is
+    # the command's, so the suggestion offers "a skill" and Claude names it when drafting.
+    s1, s2 = Session(repo), Session(repo)
+    steps = [
+        bash("psql $WAREHOUSE_URL -f queries/weekly_metrics.sql"),
+        bash("python scripts/generate_report.py --week 42"),
+        edit(f"{repo}/reports/weekly.md"),
+    ]
+    s1.turn("numbers for the team please, same as usual", steps)
+    s1.turn("can you refresh those warehouse figures again", steps)
+    out = s2.turn("need the recurring writeup done again", steps)
+    message = system_message(out["stop"])
+    assert message is not None
+    assert "To save it as a skill, run /skill-spotter:draft p" in message
+    assert "/psql" not in message and "/python" not in message
+    conn = db()
+    row = conn.execute("SELECT state, suggested_name, representative_json FROM patterns").fetchone()
+    assert row["state"] == "suggested" and row["suggested_name"] is None
+    assert "lead" in json.loads(row["representative_json"])

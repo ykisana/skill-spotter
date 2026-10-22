@@ -123,3 +123,5 @@
 {"key": "7e92439a75458ad31906c0b7", "label": "naming:judge", "model": "sonnet", "seconds": 12.2, "cost_usd": 0.039244600000000004, "output_tokens": 1090}
 {"key": "1e54fdd0b7292fda0a078f36", "label": "naming:judge", "model": "sonnet", "seconds": 12.9, "cost_usd": 0.199824, "output_tokens": 1090}
 {"key": "3d1b092e0f2de913e134bcb0", "label": "naming:judge", "model": "sonnet", "seconds": 34.2, "cost_usd": 0.057218599999999994, "output_tokens": 3407}
+{"key": "39ca353e9be08088c42fcabd", "label": "naming:judge", "model": "sonnet", "seconds": 8.5, "cost_usd": 0.035356, "output_tokens": 1090}
+{"key": "fd76b569746eb4d78b2fe1f5", "label": "naming:judge", "model": "sonnet", "seconds": 5.2, "cost_usd": 0.0189282, "output_tokens": 694}

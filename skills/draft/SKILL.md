@@ -16,10 +16,12 @@ An id starting with `w` is a workflow: a task the user does as several prompts i
    - **Fixed steps:** what happens every time (use `common_steps`; ignore exploration and failed actions).
    - **Varying parts:** what changes between runs (`varying_values`, plus differences between the prompts, such as a date range, PR number or environment). These become arguments.
 
-3. Decide who can start the skill. If `$1` is `manual` or `auto`, use that. Otherwise ask the user exactly one question: "Should Claude be able to use this skill on its own, or only when you type /<name>?" The default is only when typed.
+3. Name it. The suggested name is a guess from word counts, often a poor one. Choose the short kebab-case name the user would type for this task: 1–3 words, verb first when natural (`open-pr`, `run-migrations`, `weekly-report`). Keep the suggested name only if it's already that name. Don't reuse a Claude Code built-in command name. If the name differs, change the folder in `skill_path` to match, and if a `SKILL.md` already exists there, pick another name.
+
+4. Decide who can start the skill. If `$1` is `manual` or `auto`, use that. Otherwise ask the user exactly one question: "Should Claude be able to use this skill on its own, or only when you type /<name>?" The default is only when typed.
    If `danger` is true, the skill is always typed-only, whatever the answer.
 
-4. Write `skill_path` with the Write tool (it creates the folders; no mkdir needed). Use the suggested name unless a clearly better short kebab-case name (max 3 words) fits; if you change it, change the folder name to match. The file contains:
+5. Write `skill_path` with the Write tool (it creates the folders; no mkdir needed). The file contains:
    - frontmatter:
      - `description`: one line saying what it does. If model-invocable, write it for triggering: key use case first, natural phrases the user would type.
      - `disable-model-invocation: true` unless the user chose auto (and never when `danger` is true).
@@ -28,7 +30,7 @@ An id starting with `w` is a workflow: a task the user does as several prompts i
    - if `danger` is true, an explicit step before each step in `dangerous_steps`: "Show the user what will happen and ask for confirmation before continuing."
    Keep it short (well under 100 lines). Don't copy redacted values or secrets into it.
 
-5. Record it:
+6. Record it:
    `${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter --data-dir "${CLAUDE_PLUGIN_DATA}" accept $0 <the path you wrote>`
 
-6. Tell the user: "Saved. Next time: `/<name>`". If `skills_dir_exists` was false before you wrote the file, add: "Run `/reload-skills` once so Claude Code picks it up."
+7. Tell the user: "Saved. Next time: `/<name>`". If `skills_dir_exists` was false before you wrote the file, add: "Run `/reload-skills` once so Claude Code picks it up."

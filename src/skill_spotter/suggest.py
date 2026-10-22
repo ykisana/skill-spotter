@@ -23,7 +23,11 @@ def is_generic(conn: sqlite3.Connection, project_key: str, rep: Mapping) -> bool
         t for t, w in rep.get("tokens", {}).items() if w >= 0.5 and not t.startswith("seq:")
     ]
     if not meaningful:
-        strong_words = [w for w, f in rep.get("words", {}).items() if f >= 0.6]
+        strong_words = [
+            w
+            for w, f in rep.get("words", {}).items()
+            if f >= 0.6 and w not in normalize_text.NAME_VERBS
+        ]
         return len(strong_words) < 2
     total = patterns.n_turns(conn, project_key)
     if total < MIN_TURNS_FOR_DF:
@@ -50,12 +54,17 @@ def quote(prompt: Optional[str]) -> str:
     return f'"{text}"'
 
 
-def message(pattern_id: int, count: int, name: str, prompt: Optional[str] = None) -> str:
+def save_as(name: Optional[str]) -> str:
+    """ "/name", or "a skill" when the name is only a weak guess (naming.guess)."""
+    return f"/{name}" if name else "a skill"
+
+
+def message(pattern_id: int, count: int, name: Optional[str], prompt: Optional[str] = None) -> str:
     times = f"{count} time{'s' if count != 1 else ''}"
     task = f": {quote(prompt)}" if prompt and prompt.strip() else ""
     return (
         f"skill-spotter: you've repeated this {times}{task}. "
-        f"To save it as /{name}, run /skill-spotter:draft p{pattern_id}"
+        f"To save it as {save_as(name)}, run /skill-spotter:draft p{pattern_id}"
     )
 
 
@@ -139,18 +148,21 @@ def maybe_suggest(
         (pattern_id,),
     ).fetchone()
     hint = normalize_text.content_words(latest[0] or "") if latest else []
-    name = p["suggested_name"] or naming.suggest_name(rep, root, taken, hint)
+    if p["suggested_name"]:
+        name, weak = p["suggested_name"], False
+    else:
+        name, weak = naming.guess(rep, root, taken, hint)
     conn.execute(
         "UPDATE patterns SET state = 'suggested', suggested_name = ?, state_until = NULL "
         "WHERE id = ?",
-        (name, pattern_id),
+        (None if weak else name, pattern_id),
     )
     conn.execute(
         "INSERT INTO events(ts, type, pattern_id, session_id, data_json) "
         "VALUES(?, 'suggested', ?, ?, ?)",
         (now, pattern_id, session_id, json.dumps({"count": count, "name": name})),
     )
-    return message(pattern_id, count, name, latest[0] if latest else None)
+    return message(pattern_id, count, None if weak else name, latest[0] if latest else None)
 
 
 def suggest_ready(

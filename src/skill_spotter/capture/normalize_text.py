@@ -86,6 +86,10 @@ STOP_WORDS = frozenset(
     yes run claude say hello thx""".split()
 )
 
+# Stop words that still make good skill-name verbs ("run the pending migrations").
+NAME_VERBS = frozenset({"run"})
+_NAME_STOP_WORDS = STOP_WORDS - NAME_VERBS
+
 _TOKEN = re.compile(r"<[a-z]+>|[a-z][a-z0-9_]*")
 
 
@@ -144,7 +148,7 @@ def content_words(text: str) -> List[str]:
     for _placeholder, pattern in _PLACEHOLDERS:
         lowered = pattern.sub(" ", lowered)
     for raw in re.findall(r"[a-z][a-z\-]*[a-z]", lowered):
-        if raw not in STOP_WORDS and len(raw) > 2:
+        if raw not in _NAME_STOP_WORDS and len(raw) > 2:
             words.append(raw)
     return words
 

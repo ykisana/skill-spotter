@@ -112,3 +112,21 @@ test('nothing is drawn while Claude is working', async ($, on) => {
   const ui = await $.ui.mount({ ...BAND, props: { ...BAND.props, isWorking: true } })
   expect(await ui.find({ key: 'create' })).toBeUndefined()
 })
+
+test('a suggestion without a name offers "Create skill"', async ($, on) => {
+  stubs(on, { ...PENDING, name: null })
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await $.turn.complete(TURN)
+  const ui = await $.ui.mount(BAND)
+  const button = await ui.find({ key: 'create' })
+  expect(button?.props.label).toBe('Create skill')
+})
+
+test('a named suggestion offers "Create /name"', async ($, on) => {
+  stubs(on, PENDING)
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await $.turn.complete(TURN)
+  const ui = await $.ui.mount(BAND)
+  const button = await ui.find({ key: 'create' })
+  expect(button?.props.label).toBe('Create /update-changelog')
+})

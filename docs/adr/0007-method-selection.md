@@ -50,7 +50,7 @@ Two learned models looked best on paper and were wrong in ways the synthetic num
 - **Lookup:** the inverted index on distinctive action tokens and text words stays; it's needed for latency. For vectors in the background tier, FAISS-HNSW matches brute-force recall@10 (0.85) at 0.06 ms per query with 100k vectors. sqlite-vec couldn't be measured on this Python build (no extension loading).
 - **Multi-turn sequences (M5):** n-grams allowing one gap find all 15 planted workflows with no false ones. PrefixSpan and SPADE find them too, but report false workflows because they allow arbitrary gaps.
 - **Naming:**
-  - The heuristic scores 2.66/5 with a blind judge, against 4.84 for Claude's names; it scored 1.87 before tuning on dev.
+  - The heuristic scores 2.66/5 with a blind judge, against 4.84 for Claude's names; it scored 1.87 before tuning on dev. (2.87 after the fixes in ADR 0009.)
   - Claude names the skill when drafting, so the heuristic is only the suggestion's placeholder.
   - A local LLM wasn't evaluated: none is installed, and disk space is short.
 

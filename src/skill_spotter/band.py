@@ -24,7 +24,7 @@ BAND_DIR_ENV = "SKILL_SPOTTER_BAND_DIR"
 _STALE_SECONDS = 7 * 86400
 
 _MESSAGE = re.compile(
-    r"^skill-spotter: (?P<summary>.+)\. To save (?:it|them) as /(?P<name>[\w\-]+), "
+    r"^skill-spotter: (?P<summary>.+)\. To save (?:it|them) as (?:/(?P<name>[\w\-]+)|a skill), "
     r"run /skill-spotter:draft (?P<id>[pw]\d+)$",
     re.S,
 )
