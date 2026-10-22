@@ -28,8 +28,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        python: ["3.9", "3.12", "3.13"]
+        python: ["3.12", "3.13"]
         include:
+          # Ubuntu 26.04 (ubuntu-latest since October 2026) has no Python 3.9 build.
+          - os: ubuntu-24.04
+            python: "3.9"
           # macOS ships Python 3.9 as /usr/bin/python3, the oldest a hook may run under.
           # One macOS job only: hosted macOS runners are scarce and cost 10x on private repos.
           - os: macos-latest
