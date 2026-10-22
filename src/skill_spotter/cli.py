@@ -378,7 +378,8 @@ def cmd_extras(base: Path, *, assume_yes: bool, remove: bool) -> int:
         return 0
     if not assume_yes:
         reply = input(
-            f"Install {', '.join(EXTRAS)} (about 400 MB, from PyPI) into {target}? "
+            f"Install {', '.join(EXTRAS)} (about 400 MB from PyPI, plus an embedding model "
+            f"from Hugging Face) into {target}? "
             "This is the only network access skill-spotter ever makes. [y/N] "
         )
         if reply.strip().lower() not in ("y", "yes"):

@@ -4,7 +4,7 @@ disable-model-invocation: true
 allowed-tools: Bash(${CLAUDE_PLUGIN_ROOT}/scripts/skill-spotter *)
 ---
 
-This downloads about 400 MB from PyPI into `${CLAUDE_PLUGIN_DATA}/extras`. It is the only network access skill-spotter makes, and only the background job uses these packages; hooks never import them.
+This downloads about 400 MB from PyPI, plus an embedding model from Hugging Face, into `${CLAUDE_PLUGIN_DATA}/extras`. It is the only network access skill-spotter makes, and only the background job uses these packages; hooks never import them.
 
 1. Ask the user to confirm (yes / no). Don't run anything before they answer.
 2. Only if they confirm, run:
