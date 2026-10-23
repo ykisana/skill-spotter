@@ -115,3 +115,16 @@ def test_weak_guesses():
     # a clash with a built-in command or an existing skill needs a number
     assert naming.guess(rep({"memory": 1.0, "leak": 0.5}), None)[1]
     assert naming.guess(worded, None, taken=["deploy-api"]) == ("deploy-api-2", True)
+
+
+def test_prepositions_never_name_a_skill():
+    # Live (ADR 0009): "update the changelog with the commits since the last tag and commit
+    # it" was named /update-changelog-since.
+    words = ["update", "changelog", "commits", "since", "last", "tag", "commit"]
+    r = rep(
+        {w: 1.0 for w in words},
+        first={"update": 1.0},
+        lead={"update": 1.0, "changelog": 1.0, "commits": 1.0},
+        tokens={"edit:CHANGELOG.md": 1.0, "bash:git commit -a": 1.0},
+    )
+    assert naming.guess(r, None, order_hint=words) == ("update-changelog", False)

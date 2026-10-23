@@ -67,6 +67,8 @@ LEAD_WORDS = 3
 LEAD_MIN = 0.3
 
 _FILLER = {"thing", "stuff", "something", "code", "file", "files", "please", "quick"}
+# Prepositions and adverbs carry no task: "update-changelog-since", "revert-back".
+_FILLER |= {"since", "before", "after", "until", "back", "across", "between", "within", "again"}
 
 
 def _kebab(words: Iterable[str]) -> str:

@@ -61,8 +61,9 @@ test('a queued suggestion is drawn above the prompt with both buttons', async ($
   await $.turn.complete(TURN)
   expect(runs[1].slice(1)).toEqual(['band', 'pending', '--session', 'sess-1'])
   const ui = await $.ui.mount(BAND)
-  const line = 'skill-spotter: You\'ve repeated this 3 times: "update the changelog"'
-  expect(await ui.find({ type: 'Text', text: line })).toBeDefined()
+  expect(await ui.find({ type: 'Text', text: 'skill-spotter' })).toBeDefined()
+  const what = 'You\'ve repeated this 3 times: "update the changelog"'
+  expect(await ui.find({ type: 'Text', text: what })).toBeDefined()
   expect(await ui.find({ key: 'create' })).toBeDefined()
   expect(await ui.find({ key: 'later' })).toBeDefined()
 })

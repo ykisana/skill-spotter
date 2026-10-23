@@ -57,37 +57,48 @@ export function register(on: any) {
       $.ui.invalidate('ui.render')
     }
     const label = pending.summary ?? pending.text.replace(/^skill-spotter: /, '')
+    const buttons = [
+      pending.draft
+        ? Button({
+            key: 'create',
+            label: pending.name ? `Create /${pending.name}` : 'Create skill',
+            hotkey: '1',
+            onPress: async () => {
+              await $.prompt.fill({ text: pending!.draft })
+              close()
+            },
+          })
+        : null,
+      pending.id
+        ? Button({
+            key: 'later',
+            label: 'Not now',
+            hotkey: '2',
+            onPress: async () => {
+              const p = pending!
+              if (p.id!.startsWith('p')) {
+                await cli($, [...(p.data_dir ? ['--data-dir', p.data_dir] : []), 'snooze', p.id!])
+              }
+              close()
+            },
+          })
+        : null,
+    ].filter(Boolean)
+    // What repeated on top, the choices under it: the quote can be long, and a row of
+    // text and buttons wraps the quote awkwardly beside them.
     return Box({
-      flexDirection: 'row',
-      columnGap: 2,
+      flexDirection: 'column',
       children: [
-        Text({ children: ['skill-spotter: ' + label] }),
-        pending.draft
-          ? Button({
-              key: 'create',
-              label: pending.name ? `Create /${pending.name}` : 'Create skill',
-              hotkey: '1',
-              onPress: async () => {
-                await $.prompt.fill({ text: pending!.draft })
-                close()
-              },
-            })
-          : null,
-        pending.id
-          ? Button({
-              key: 'later',
-              label: 'Not now',
-              hotkey: '2',
-              onPress: async () => {
-                const p = pending!
-                if (p.id!.startsWith('p')) {
-                  await cli($, [...(p.data_dir ? ['--data-dir', p.data_dir] : []), 'snooze', p.id!])
-                }
-                close()
-              },
-            })
-          : null,
-      ].filter(Boolean),
+        Box({
+          flexDirection: 'row',
+          columnGap: 1,
+          children: [
+            Text({ key: 'name', bold: true, children: ['skill-spotter'] }),
+            Text({ key: 'what', children: [label] }),
+          ],
+        }),
+        Box({ flexDirection: 'row', columnGap: 2, children: buttons }),
+      ],
     })
   })
 }

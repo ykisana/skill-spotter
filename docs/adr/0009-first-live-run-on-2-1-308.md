@@ -99,3 +99,9 @@ Decision:
 ## The band after /clear
 
 `/clear` gives the session a new id and fires `SessionEnd`, which removed the band registration, but the mod gets no new `session.start`. So every suggestion after a `/clear` fell back to the `Stop says:` message. Decision: the mod reads `$.session.id()` after every turn, and `band pending` registers the id it's given.
+
+## First live band
+
+After the fixes above, a third interactive run of the changelog task drew the band. Two follow-ups:
+- **Layout:** with the quote and the buttons on one row, the quote wrapped awkwardly beside the buttons. The band is now two rows: **skill-spotter** and what repeated on top, the buttons underneath. It uses `bold`, not `weight`, because Claude Code before 2.1.299 skips a tree that sets `weight`.
+- **Prepositions:** the name was `/update-changelog-since`. Prepositions (`since`, `before`, `back`…) are now naming filler. On the test split, `squash-before` became `squash-migrations` (Claude's name), while `revert-back` and `shard-across` fell back to weak command names, which aren't shown.
