@@ -68,3 +68,20 @@ A word heuristic can't name paraphrased tasks well, so:
   The suggestion then says "To save it as a skill", the band button reads **[Create skill]**, and the name isn't stored, so a re-suggestion derives it again. In the judged sets, the hidden names averaged 1.3–1.6 and the names still shown averaged 2.9–3.0.
 - **Claude names the skill when drafting.** `/skill-spotter:draft` now picks the name in its own step, before asking who may run the skill. It keeps the guess only if it's already the name the user would type. The final names are therefore Claude's, which judged 4.8.
 - **Patterns created before this change** have no `lead` and fall back to first-word verbs until they're rebuilt.
+
+## Real repeats didn't match
+
+Claude Code (Sonnet) ran "update the changelog with the commits since the last tag and commit it" in two sessions. The two runs became two patterns. The shipped matcher scored the pair **0.03** against θ = 0.7, despite:
+- identical wording (BM25 1.0);
+- the same edited file.
+
+Claude reached the result by different commands each run: `git tag --list` vs `git tag --sort`, and `git add` + `git commit` vs `git commit -a`. So action similarity was 0.29, and the "few actions" term (2 meaningful actions) pulled the score down further. The learned weights are text 0.17 against actions 1.47. The synthetic data repeats its commands, so it never showed this. Paraphrased runs ("add a changelog entry under Unreleased…", "update CHANGELOG.md with what changed since…") didn't match either. That part is still open (Known limitations in the README).
+
+Decision: a rule next to the existing text-only path. Two turns are the same task (0.99) when:
+- their word 1–2-grams overlap ≥ 0.6, the same bar as the text-only path;
+- and they edited the same files (file Jaccard ≥ 0.5) or share at least half their actions (action ≥ `action_weak`).
+
+Results:
+- **Full replay:** test and dev precision, recall and false suggestions are unchanged. On test, duplicates went from 26 to 25 and extra patterns from 6 to 5.
+- **Scenario test:** `tests/test_shipped_matcher.py` replays the live command variations. It fails on the old matcher.
+- **Still unmeasured:** real labelled data (`bench.label`), which is still the way to tune this properly.

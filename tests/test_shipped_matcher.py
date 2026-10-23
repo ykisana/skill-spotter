@@ -107,3 +107,37 @@ def test_repeated_questions_without_meaningful_actions_join(repo, db):
             [bash("git describe --tags --abbrev=0"), bash("git log v1.0.0..HEAD --oneline")],
         )
     assert db().execute("SELECT COUNT(DISTINCT pattern_id) FROM turns").fetchone()[0] == 1
+
+
+def test_same_request_reached_by_different_commands_joins_one_pattern(repo, db):
+    # Live, Claude Code (Sonnet) run on the same prompt in three sessions (ADR 0009): the
+    # tag lookup and the commit differ every run. The shipped model scored the first two
+    # 0.03 (identical wording, same file edited), so nothing was ever suggested.
+    prompt = "update the changelog with the commits since the last tag and commit it"
+    runs = [
+        [
+            bash("git describe --tags --abbrev=0"),
+            bash("git log --oneline v0.4.0..HEAD"),
+            read(f"{repo}/CHANGELOG.md"),
+            edit(f"{repo}/CHANGELOG.md"),
+            bash("git commit -am 'update changelog'"),
+        ],
+        [
+            bash("git tag --sort=-creatordate"),
+            bash("git log v0.5.0..HEAD --stat"),
+            read(f"{repo}/CHANGELOG.md"),
+            edit(f"{repo}/CHANGELOG.md"),
+            bash("git add CHANGELOG.md"),
+            bash("git commit -m 'changelog for unreleased changes'"),
+        ],
+        [
+            bash("git tag --list"),
+            bash("git log --oneline v0.6.0..HEAD"),
+            edit(f"{repo}/CHANGELOG.md"),
+            bash("git add CHANGELOG.md"),
+            bash("git commit -m 'update changelog'"),
+        ],
+    ]
+    outs = [Session(repo).turn(prompt, actions) for actions in runs]
+    assert db().execute("SELECT COUNT(DISTINCT pattern_id) FROM turns").fetchone()[0] == 1
+    assert "you've repeated this 3 times" in (system_message(outs[-1]["stop"]) or "")

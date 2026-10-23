@@ -100,6 +100,9 @@ class BM25Stats:
         return min(1.0, 0.5 * (self.score(a, b) / sa + self.score(b, a) / sb))
 
 
+SAME_REQUEST_FILES = 0.5
+
+
 class FusedScorer:
     """Pairwise same-task probability between stored turns."""
 
@@ -229,9 +232,15 @@ class FusedScorer:
         # no meaningful actions, and synthetic training data has almost none of them, so the
         # learned weights can't recognise them. Keep the rule's text-only path (SPEC 5.3).
         text_only = baseline.DEFAULTS["text_only"]
-        if (
-            f["n_min"] < baseline.DEFAULTS["few_actions"]
-            and jaccard_sets(a["grams"], b["grams"]) >= text_only
+        same_words = jaccard_sets(a["grams"], b["grams"]) >= text_only
+        if f["n_min"] < baseline.DEFAULTS["few_actions"] and same_words:
+            return 0.99
+        # The same request with the same edits, reached by different commands (ADR 0009):
+        # live, Claude lists tags with `git tag --list` one run and `git tag --sort` the next,
+        # commits with `git add` + `git commit` or `git commit -a`. Synthetic data repeats
+        # its commands, so the learned weights trust actions over identical wording.
+        if same_words and (
+            f["files"] >= SAME_REQUEST_FILES or f["action"] >= baseline.DEFAULTS["action_weak"]
         ):
             return 0.99
         if self.fusion == "logreg":
