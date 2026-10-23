@@ -1,7 +1,7 @@
 # skill-spotter: dev notes
 
 - Milestones M0–M8 are built (see `docs/adr/` 0001–0009). Open items: real held-out labelling (`bench.label`), live test of the mod band on Claude Code ≥ 2.1.287, publishing.
-- Record decisions in `docs/adr/`. Check the Claude Code docs before relying on any hook, manifest or skill field (ADR 0002 is the last check). For the mod, trust the `claude-code.d.ts` for the installed build over the docs pages (ADR 0009).
+- Record decisions in `docs/adr/`. Check the Claude Code docs before relying on any hook, manifest or skill field (ADR 0002 is the last check). For the mod, trust the types for the installed build over the docs pages (ADR 0009): an interactive `claude --plugin-dir .` session writes them to `.claude-plugin/types/claude-code/index.d.ts` (git-ignored).
 - **Commits:** one-line lowercase messages. No Claude attribution, no `Co-Authored-By`, no "Generated with" lines.
 - **Online tier:** everything hooks import (`src/skill_spotter/`). Standard library only, and it must run on Python 3.9 (keep `typing.Dict`/`Optional`, no `match`). `tests/test_plugin_layout.py` enforces this.
 - **Hooks:** they fail open and print nothing except the `Stop` `systemMessage`. Only `claude_code.py` knows Claude Code formats; `handlers.py` is editor-neutral (a Cursor adapter is planned, see ADR 0003).

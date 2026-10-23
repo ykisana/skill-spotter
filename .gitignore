@@ -26,3 +26,7 @@ bench/data/real/
 
 # Method Lab caches (models, features)
 bench/.cache/
+
+# Written by Claude Code when the mod is loaded with --plugin-dir (types for that build)
+/tsconfig.json
+/.claude-plugin/types/
