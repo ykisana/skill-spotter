@@ -204,3 +204,45 @@ def test_order_matters():
     a = turn_fingerprint([bash("npm run build"), bash("npm run test")])
     b = turn_fingerprint([bash("npm run test"), bash("npm run build")])
     assert {t for t in a if t.startswith("seq:")} != {t for t in b if t.startswith("seq:")}
+
+
+# Live run on 2.1.308 (ADR 0009): Claude edited the changelog with a python heredoc and
+# found the tag with a command substitution; both turned into made-up commands.
+LIVE = (
+    "python3 - <<'E'\n"
+    "p='CHANGELOG.md'\n"
+    "s=open(p).read()\n"
+    "open(p,'w').write(s)\n"
+    "E\n"
+    'git commit -qam "update changelog since v0.7.0" && git show --stat HEAD | tail -3'
+)
+
+
+def test_heredoc_bodies_are_not_commands():
+    assert split_commands(LIVE) == [
+        ["python3", "-"],
+        ["git", "commit", "-qam", "update changelog since v0.7.0"],
+        ["git", "show", "--stat", "HEAD"],
+        ["tail", "-3"],
+    ]
+    tokens = normalize_action("Bash", {"command": LIVE}, None)["tokens"]
+    assert not [t for t in tokens if t in ("bash:p", "bash:.read", "bash:s")]
+
+
+def test_heredoc_variants():
+    assert split_commands("cat <<EOF > notes.md\nhello\nEOF\nls") == [["cat"], ["ls"]]
+    assert split_commands('cat <<"END"\nx; rm -rf /\nEND\necho ok') == [["cat"], ["echo", "ok"]]
+    # <<- strips leading tabs from the closing tag
+    assert split_commands("cat <<-EOF\n\tbody\n\tEOF\necho done") == [["cat"], ["echo", "done"]]
+    # an unterminated heredoc swallows the rest, as the shell would
+    assert split_commands("cat <<EOF\nno end") == [["cat"]]
+
+
+def test_command_substitutions_are_values():
+    cmd = "git log $(git describe --tags --abbrev=0)..HEAD --oneline"
+    assert split_commands(cmd) == [["git", "log", "%sub..HEAD", "--oneline"]]
+    tokens = normalize_action("Bash", {"command": cmd}, None)["tokens"]
+    assert "bash:git log --oneline" in tokens and not any("HEAD" in t for t in tokens)
+    assert split_commands("git log `git describe`..HEAD") == [["git", "log", "%sub..HEAD"]]
+    assert split_commands("echo $((1 + 2)) && ls") == [["echo", "%sub"], ["ls"]]
+    assert split_commands("echo $(date $(echo +%F)) done") == [["echo", "%sub", "done"]]

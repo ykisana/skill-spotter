@@ -130,3 +130,19 @@ test('a named suggestion offers "Create /name"', async ($, on) => {
   const button = await ui.find({ key: 'create' })
   expect(button?.props.label).toBe('Create /update-changelog')
 })
+
+test('after /clear, suggestions are fetched for the new session id', async ($, on) => {
+  const runs: string[][] = []
+  let id = 'before-clear'
+  on('session.id', () => ({ value: id }))
+  on('session.start', () => ({ cwd: '/work' }))
+  on('turn.complete', () => ({ text: '' }))
+  on('process.run', ($: any, e: any) => {
+    runs.push([...e.argv])
+    return { value: { exitCode: 0, stdout: '', stderr: '' } }
+  })
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  id = 'after-clear'
+  await $.turn.complete(TURN)
+  expect(runs[runs.length - 1].slice(1)).toEqual(['band', 'pending', '--session', 'after-clear'])
+})

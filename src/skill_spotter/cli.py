@@ -89,8 +89,8 @@ def cmd_band(args) -> int:
     """The mod's hand-off; touches only the band mailbox, never the database."""
     from . import band
 
+    band.register(args.session)  # "pending" too: after /clear the session id is new
     if args.action == "register":
-        band.register(args.session)
         return 0
     pending = band.pop(args.session)
     print(json.dumps(pending) if pending else "")

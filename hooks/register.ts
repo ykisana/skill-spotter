@@ -32,8 +32,11 @@ export function register(on: any) {
     return next(e)
   })
 
-  // After each turn, fetch a suggestion the Stop hook queued for this session.
+  // After each turn, fetch a suggestion the Stop hook queued for this session. The id is
+  // read again: /clear starts a new session without a new session.start, and `band
+  // pending` registers the new id so the next suggestion comes here, not as a message.
   on('turn.complete', async ($: any, e: any, next: any) => {
+    sessionId = String(await $.session.id())
     const out = await cli($, ['band', 'pending', '--session', sessionId])
     if (out) {
       try {

@@ -15,7 +15,7 @@ from __future__ import annotations
 import os
 import re
 import shlex
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 from urllib.parse import urlparse
 
 from . import rules
@@ -97,8 +97,53 @@ def _simple(tool: str, token: str, weight: float, *, summary: str, low: bool = F
 # --- Bash -----------------------------------------------------------------------------
 
 
+_HEREDOC = re.compile(r"<<(-?)\s*(['\"]?)([A-Za-z_][A-Za-z0-9_]*)\2")
+# Stands in for a command substitution: an argument value, never a command name.
+SUBSTITUTION = "%sub"
+
+
+def strip_heredocs(command: str) -> str:
+    """Drop here-document bodies (``python3 - <<'EOF' ... EOF``): they are data or a script
+    for another program, not shell commands."""
+    out: List[str] = []
+    pending: List[Tuple[str, bool]] = []
+    for line in command.split("\n"):
+        if pending:
+            tag, dash = pending[0]
+            if (line.lstrip("\t") if dash else line).strip() == tag:
+                pending.pop(0)
+            continue
+        for m in _HEREDOC.finditer(line):
+            pending.append((m.group(3), bool(m.group(1))))
+        out.append(_HEREDOC.sub(" ", line))
+    return "\n".join(out)
+
+
+def strip_substitutions(command: str) -> str:
+    """Replace ``$(...)`` and backquoted command substitutions with a value placeholder, so
+    ``git log $(git describe --tags)..HEAD`` stays one ``git log`` with a value."""
+    out, i, n = [], 0, len(command)
+    while i < n:
+        if command.startswith("$(", i):
+            depth, j = 1, i + 2
+            while j < n and depth:
+                depth += {"(": 1, ")": -1}.get(command[j], 0)
+                j += 1
+            out.append(SUBSTITUTION)
+            i = j
+        elif command[i] == "`":
+            j = command.find("`", i + 1)
+            out.append(SUBSTITUTION)
+            i = n if j < 0 else j + 1
+        else:
+            out.append(command[i])
+            i += 1
+    return "".join(out)
+
+
 def split_commands(command: str) -> List[List[str]]:
     """Shell words of each simple command in a (possibly chained) command line."""
+    command = strip_substitutions(strip_heredocs(command))
     command = _REDIRECT.sub(" ", command.replace("\\\n", " "))
     # Newlines separate commands too, so they're punctuation here, not whitespace.
     lexer = shlex.shlex(command, posix=True, punctuation_chars="();<>|&\n")

@@ -85,3 +85,17 @@ Results:
 - **Full replay:** test and dev precision, recall and false suggestions are unchanged. On test, duplicates went from 26 to 25 and extra patterns from 6 to 5.
 - **Scenario test:** `tests/test_shipped_matcher.py` replays the live command variations. It fails on the old matcher.
 - **Still unmeasured:** real labelled data (`bench.label`), which is still the way to tune this properly.
+
+## Heredocs and command substitutions became fake commands
+
+In an interactive session, Claude edited the changelog with `python3 - <<'E' … E`, and found the tag with `git log $(git describe --tags --abbrev=0)..HEAD`. The normalizer split the heredoc's Python into commands (`bash:p`, `bash:.read`, `bash:## Unreleased…`) and made `..HEAD` a command name. The fake "meaningful" actions kept the turn out of the text-only path, so the third repeat matched nothing.
+
+Decision:
+- `split_commands` drops heredoc bodies (`<<`, `<<-`, quoted or bare tags; an unterminated body runs to the end).
+- `$(…)`, `$((…))` and backquotes become the value placeholder `%sub`.
+- **Full replay:** dev is identical. On test, one more duplicate suggestion and extra pattern; precision and recall are unchanged.
+- **Still open:** an edit made through a shell command (a heredoc script, `sed -i`) doesn't count as a file edit.
+
+## The band after /clear
+
+`/clear` gives the session a new id and fires `SessionEnd`, which removed the band registration, but the mod gets no new `session.start`. So every suggestion after a `/clear` fell back to the `Stop says:` message. Decision: the mod reads `$.session.id()` after every turn, and `band pending` registers the id it's given.

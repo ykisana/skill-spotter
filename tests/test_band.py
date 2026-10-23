@@ -137,3 +137,11 @@ def test_parse_a_workflow_without_a_name():
         "To save them as a skill, run /skill-spotter:draft w7"
     )
     assert w["id"] == "w7" and w["name"] is None and w["draft"] == "/skill-spotter:draft w7"
+
+
+def test_fetching_registers_a_session_started_by_clear(capsys):
+    # /clear gives a new session id and no new session.start for the mod; the mod reads
+    # the id after each turn and fetches with it, which registers it.
+    assert not band.is_active("after-clear")
+    assert cli.main(["band", "pending", "--session", "after-clear"]) == 0
+    assert band.is_active("after-clear")
