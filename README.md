@@ -2,7 +2,7 @@
 
 A Claude Code plugin that notices tasks you keep repeating and offers to save them as a skill you can run with `/name`.
 
-![After the third "update the changelog…" request, a skill-spotter band above the prompt offers Create /update-changelog or Not now](docs/images/band.png)
+![skill-spotter in Claude Code: after the third "update the changelog…" request a band offers Create /update-changelog; Claude drafts the skill, and next time /update-changelog does the task](docs/images/demo.gif)
 
 - **Private.** Everything it records stays on your computer. Nothing is uploaded, and there's no telemetry or account. See [Privacy](#privacy).
 - **Free to run.** It uses no tokens per turn. Suggestions are shown to you, not to Claude.
