@@ -29,6 +29,15 @@ def data_dir(explicit: str | os.PathLike | None = None) -> Path:
     return FALLBACK_DATA_DIR
 
 
+def display(path: str | os.PathLike) -> str:
+    """``path`` with the home folder as ``~``: shorter, and screenshots of the status
+    output don't show the user's account name."""
+    text, home = str(path), str(Path.home())
+    if text == home or text.startswith(home + os.sep):
+        return "~" + text[len(home) :]
+    return text
+
+
 def db_path(base: Path) -> Path:
     return base / DB_NAME
 

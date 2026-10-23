@@ -2,19 +2,32 @@
 
 A Claude Code plugin that notices tasks you keep repeating and offers to save them as a skill you can run with `/name`.
 
-```
-You:    write release notes into the changelog for commits after the latest tag, commit the result
-Claude: (does the task)
-        skill-spotter: you've repeated this 3 times: "write release notes into the
-        changelog for commits after…"   [Create /update-changelog]  [Not now]
-You:    /skill-spotter:draft p1
-Claude: Saved. Next time: /update-changelog
-```
+![After the third "update the changelog…" request, a skill-spotter band above the prompt offers Create /update-changelog or Not now](docs/images/band.png)
 
 - **Private.** Everything it records stays on your computer. Nothing is uploaded, and there's no telemetry or account. See [Privacy](#privacy).
 - **Free to run.** It uses no tokens per turn. Suggestions are shown to you, not to Claude.
 - **You stay in charge.** It never creates a skill on its own; you decide with `/skill-spotter:draft`.
-- **Recognises the task, not just the words.** It compares what Claude *did* (commands, files, tools) as well as what you typed, so the same task phrased differently still counts. It also spots multi-prompt workflows.
+- **Recognises the task, not just the words.** It compares what Claude *did* (commands, files, tools) as well as what you typed. So the same request still counts when Claude takes different steps, and a rephrased request counts when Claude's steps stay similar. It also spots multi-prompt workflows.
+
+## See it work
+
+These screenshots come from a real Claude Code 2.1.308 session in a demo repo, after asking for the same changelog update in three sessions.
+
+**1. Create the skill.** **[Create /update-changelog]** fills in `/skill-spotter:draft p1`. Claude reads the recorded steps, then asks one question: should only you be able to start the skill, or Claude too?
+
+![The draft asks whether Claude may use /update-changelog on its own or only when typed](docs/images/draft-question.png)
+
+**2. It's saved** as `.claude/skills/update-changelog/SKILL.md`, with the steps Claude actually took.
+
+![Claude writes SKILL.md with the steps and says: Saved. Next time: /update-changelog](docs/images/saved.png)
+
+**3. Next time, one command.**
+
+![Typing /update-changelog adds the new commits to the changelog and commits](docs/images/use-skill.png)
+
+**4. Track it.** `/skill-spotter:status` shows what it found and whether you use the skills you created.
+
+![skill-spotter status: p1 /update-changelog, 3x in 3 sessions, accepted, used 1x](docs/images/status.png)
 
 ## Privacy
 
@@ -93,6 +106,8 @@ Measured on a synthetic benchmark: 98 task families and 6,460 turns, mostly one-
 
 - Questions you answer only by exploring don't match when they're reworded, because without actions only the wording can match.
 - Small one-edit tasks with very different wording can split into two patterns. The background job merges some of them.
+- A request that is reworded *and* done with different commands each time may not match. Claude often varies its commands, so in a live test, three differently worded changelog updates stayed separate. Repeating your usual wording helps.
+- A file Claude edits through a shell command (a script, `sed -i`) isn't counted as an edit.
 
 ## Development
 

@@ -200,7 +200,7 @@ def cmd_status(conn: sqlite3.Connection, base: Path, *, as_json: bool) -> int:
             )
     print(
         f"Suggestions: {'on' if enabled else 'paused'} · turns recorded: {counts['turns']}"
-        f" · data: {base}"
+        f" · data: {paths.display(base)}"
     )
     return 0
 

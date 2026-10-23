@@ -87,3 +87,15 @@ def test_corrupt_database_gives_a_clear_error(isolated_data_dir, capsys):
     err = capsys.readouterr().err
     assert "can't open the database" in err
     assert "forget" in err
+
+
+def test_paths_are_displayed_relative_to_home(tmp_path, monkeypatch):
+    from pathlib import Path
+
+    from skill_spotter import paths
+
+    monkeypatch.setattr(Path, "home", staticmethod(lambda: tmp_path))
+    assert paths.display(tmp_path / ".claude" / "x") == "~/.claude/x"
+    assert paths.display(tmp_path) == "~"
+    assert paths.display(str(tmp_path) + "-other/x") == str(tmp_path) + "-other/x"
+    assert paths.display("/srv/data") == "/srv/data"
