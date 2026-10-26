@@ -28,6 +28,12 @@ _MESSAGE = re.compile(
     r"run /skill-spotter:draft (?P<id>[pw]\d+)$",
     re.S,
 )
+# A standing instruction for CLAUDE.md (ADR 0010).
+_RULE_MESSAGE = re.compile(
+    r"^skill-spotter: (?P<summary>.+)\. To add it to CLAUDE\.md, "
+    r"run /skill-spotter:rule (?P<id>r\d+)$",
+    re.S,
+)
 
 
 def band_dir() -> Path:
@@ -54,6 +60,17 @@ def is_active(session_id: str) -> bool:
 
 
 def parse(text: str) -> Dict[str, Any]:
+    rule = _RULE_MESSAGE.search(text)
+    if rule:
+        summary = rule.group("summary")
+        return {
+            "text": text,
+            "summary": summary[:1].upper() + summary[1:],
+            "id": rule.group("id"),
+            "name": None,
+            "draft": f"/skill-spotter:rule {rule.group('id')}",
+            "action": "Add to CLAUDE.md",
+        }
     m = _MESSAGE.search(text)
     if not m:
         return {"text": text}

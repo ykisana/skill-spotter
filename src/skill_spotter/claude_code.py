@@ -8,7 +8,9 @@ would be a sibling module with the same three names: HANDLERS, normalize, render
 from __future__ import annotations
 
 import json
-from typing import Any, Callable, Dict, Optional, Tuple
+import os
+import sys
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from . import handlers
 
@@ -59,7 +61,67 @@ def normalize(hook_event: str, payload: Dict[str, Any]) -> handlers.Event:
         crons = payload.get("session_crons")
         crons = crons if isinstance(crons, list) else []
         event["scheduled_prompts"] = [c.get("prompt") for c in crons if isinstance(c, dict)]
+        event["instruction_files"] = instruction_files(payload.get("cwd"))
     return event
+
+
+_MANAGED_CLAUDE_MD = {
+    "darwin": "/Library/Application Support/ClaudeCode/CLAUDE.md",
+    "linux": "/etc/claude-code/CLAUDE.md",
+    "win32": r"C:\Program Files\ClaudeCode\CLAUDE.md",
+}
+
+
+def instruction_files(cwd: Optional[str]) -> List[str]:
+    """The memory files Claude Code loads at launch in ``cwd`` (docs: "How Claude remembers
+    your project"): managed policy, ``~/.claude/CLAUDE.md`` and ``~/.claude/rules/``, the
+    CLAUDE.md / CLAUDE.local.md / AGENTS.md files from ``cwd`` up to the root, and the
+    project's ``.claude/rules/``."""
+    from . import project
+
+    home = os.path.expanduser("~")
+    found = [_MANAGED_CLAUDE_MD.get(sys.platform, ""), os.path.join(home, ".claude", "CLAUDE.md")]
+    found += _markdown_under(os.path.join(home, ".claude", "rules"))
+    if cwd:
+        current = os.path.abspath(cwd)
+        while True:
+            for name in (
+                "CLAUDE.md",
+                os.path.join(".claude", "CLAUDE.md"),
+                "CLAUDE.local.md",
+                "AGENTS.md",
+            ):
+                found.append(os.path.join(current, name))
+            parent = os.path.dirname(current)
+            if parent == current:
+                break
+            current = parent
+        root = project.project_root(cwd)
+        if root and root != home:
+            found += _markdown_under(os.path.join(root, ".claude", "rules"))
+    seen, files = set(), []
+    for path in found:
+        if path and path not in seen and os.path.isfile(path):
+            seen.add(path)
+            files.append(path)
+    return files
+
+
+def _markdown_under(directory: str) -> List[str]:
+    """``.md`` files under ``directory``, following symlinks (rules folders may link shared
+    rules in) but never into a folder twice, so a symlink loop can't spin."""
+    files: List[str] = []
+    visited = set()
+    for base, dirs, names in os.walk(directory, followlinks=True):
+        real = os.path.realpath(base)
+        if real in visited:
+            dirs[:] = []
+            continue
+        visited.add(real)
+        files += [os.path.join(base, n) for n in sorted(names) if n.endswith(".md")]
+        if len(files) > 200:
+            break
+    return files
 
 
 def render(hook_event: str, result: Any) -> Optional[str]:

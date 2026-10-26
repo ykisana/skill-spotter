@@ -8,6 +8,7 @@ A Claude Code plugin that notices tasks you keep repeating and offers to save th
 - **Free to run.** It uses no tokens per turn. Suggestions are shown to you, not to Claude.
 - **You stay in charge.** It never creates a skill on its own; you decide with `/skill-spotter:draft`.
 - **Recognises the task, not just the words.** It compares what Claude *did* (commands, files, tools) as well as what you typed. So the same request still counts when Claude takes different steps, and a rephrased request counts when Claude's steps stay similar. It also spots multi-prompt workflows.
+- **Spots instructions you keep repeating.** When you add the same rule to many different requests ("make sure I'm the only author, no claude"), it offers to put it in CLAUDE.md instead, so you can stop typing it.
 
 ## See it work
 
@@ -35,7 +36,7 @@ These screenshots come from a real Claude Code 2.1.308 session in a demo repo, a
 
 | | |
 |---|---|
-| **Stored** | Your prompts and the shell commands Claude ran, with secrets removed (commands are cut to 500 characters); names of files Claude read or edited, relative to the project; the domain of web pages Claude fetched; the names of MCP tools Claude called and their argument names; pattern counts |
+| **Stored** | Your prompts and the shell commands Claude ran, with secrets removed (commands are cut to 500 characters); names of files Claude read or edited, relative to the project; the domain of web pages Claude fetched; the names of MCP tools Claude called and their argument names; pattern counts; the sentences of your prompts that read like an instruction ("make sure…", "don't…"), and the names of the CLAUDE.md files a rule was written to |
 | **Never stored** | Tool output, file contents, edit contents, MCP argument values, Claude's replies, secrets (API keys, tokens, passwords, private keys, credentials in URLs) |
 | **Kept for** | 90 days, after which turns are deleted. Pattern summaries stay. |
 | **Delete it all** | `/skill-spotter:forget` |
@@ -44,6 +45,7 @@ These screenshots come from a real Claude Code 2.1.308 session in a demo repo, a
 **When data leaves your machine.** This only happens through commands you run yourself:
 
 - **`/skill-spotter:draft`** shows Claude the pattern's prompts (with secrets removed) and steps, so it can write the skill. They go to Anthropic as part of your conversation, like anything else you show Claude. You already sent those prompts when you first typed them.
+- **`/skill-spotter:rule`** does the same with the instructions behind a rule, so Claude can write the CLAUDE.md line.
 - **`skill-spotter verify`** runs `claude -p` on the skill's description and on test prompts that Claude writes. It never sends your recorded history. It spends tokens.
 - **`/skill-spotter:extras`** downloads Python packages from PyPI and an embedding model from Hugging Face, once, after asking. It sends nothing about you.
 
@@ -68,6 +70,7 @@ You need Claude Code and `python3` 3.9+ on your `PATH` (macOS's built-in one wor
 |---|---|
 | `/skill-spotter:status` | Patterns found, suggestions, skills you created and how often you use them |
 | `/skill-spotter:draft <pN\|wN>` | Turn a pattern or workflow into a skill |
+| `/skill-spotter:rule <rN>` | Add an instruction you keep repeating to CLAUDE.md (yours or the project's) |
 | `/skill-spotter:on` / `:off` | Resume or pause suggestions |
 | `/skill-spotter:forget` | Delete everything stored (asks first) |
 | `/skill-spotter:train` | Re-group patterns now instead of waiting for the background job |
@@ -85,9 +88,11 @@ The CLI (`scripts/skill-spotter`) adds the following:
 3. **Suggest.** A suggestion appears when a task has happened 3 times in 2+ sessions within 30 days, at most once per session. Trivial patterns (only `git status` or file reads) are never suggested. Anything with risky steps (`--force`, `deploy`, `rm -rf`) becomes a skill that only runs when you type it, and that asks before the risky step.
 4. **Follow up.** If you ignore a suggestion it's snoozed for 14 days, then dropped. Skills you create are tracked so `status` can show whether you use them.
 
+**Repeated instructions.** Some things you say aren't tasks but rules you attach to many tasks: "make sure I'm the only author, no claude", "keep it as one commit". skill-spotter picks out sentences that read like an instruction and reduces them to their key words, forgiving typos. When the same instruction shows up in 3 prompts across 3+ sessions within 30 days, it suggests adding it to CLAUDE.md. Unlike tasks, instructions are counted across all your projects. It stays quiet if a CLAUDE.md, `CLAUDE.local.md`, `AGENTS.md` or `.claude/rules/` file Claude Code loads already says it. `/skill-spotter:rule` writes one general line and asks whether it goes in your own `~/.claude/CLAUDE.md` or the project's.
+
 A suggestion quotes your latest prompt, so you can see what repeated, and proposes a name when the prompts give a good one. Otherwise it offers to save "a skill", and Claude picks the name when drafting it. Claude can rename a proposed name too.
 
-On Claude Code 2.1.287+, suggestions appear in a band above the prompt with **[Create /name]** (or **[Create skill]**) and **[Not now]** buttons. On older versions they appear as a message under Claude's reply, which Claude Code labels `Stop says:`.
+On Claude Code 2.1.287+, suggestions appear in a band above the prompt with **[Create /name]** (or **[Create skill]**, or **[Add to CLAUDE.md]**) and **[Not now]** buttons. On older versions they appear as a message under Claude's reply, which Claude Code labels `Stop says:`.
 
 More detail is in [docs/method-lab.md](docs/method-lab.md) (how the matcher was chosen) and [docs/adr](docs/adr) (every design decision).
 

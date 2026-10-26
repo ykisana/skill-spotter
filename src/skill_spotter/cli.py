@@ -34,19 +34,21 @@ def build_parser() -> argparse.ArgumentParser:
     status = sub.add_parser("status", help="show patterns, suggestions and created skills")
     status.add_argument("--json", action="store_true", help="machine-readable output")
 
-    show = sub.add_parser("show", help="show one pattern: prompts, steps, varying values")
-    show.add_argument("pattern", help="pattern id, e.g. p42")
+    show = sub.add_parser("show", help="show one pattern, workflow or rule")
+    show.add_argument("pattern", help="pattern, workflow or rule id, e.g. p42, w3, r1")
     show.add_argument("--json", action="store_true", help="machine-readable output")
 
-    accept = sub.add_parser("accept", help="record that a pattern was saved as a skill")
-    accept.add_argument("pattern", help="pattern id, e.g. p42")
-    accept.add_argument("skill_path", help="path of the SKILL.md that was written")
+    accept = sub.add_parser(
+        "accept", help="record that a pattern was saved as a skill, or a rule written down"
+    )
+    accept.add_argument("pattern", help="pattern, workflow or rule id, e.g. p42, w3, r1")
+    accept.add_argument("skill_path", help="path of the SKILL.md (or CLAUDE.md) that was written")
 
-    dismiss = sub.add_parser("dismiss", help="never suggest this pattern again")
-    dismiss.add_argument("pattern", help="pattern id, e.g. p42")
+    dismiss = sub.add_parser("dismiss", help="never suggest this pattern or rule again")
+    dismiss.add_argument("pattern", help="pattern or rule id, e.g. p42, r1")
 
-    snooze = sub.add_parser("snooze", help="don't suggest this pattern for a while")
-    snooze.add_argument("pattern", help="pattern id, e.g. p42")
+    snooze = sub.add_parser("snooze", help="don't suggest this pattern or rule for a while")
+    snooze.add_argument("pattern", help="pattern or rule id, e.g. p42, r1")
     snooze.add_argument("--days", type=float, default=14, help="how long (default 14)")
 
     stats = sub.add_parser("stats", help="suggestions shown, accepted %%, skills used")
@@ -170,6 +172,7 @@ def cmd_status(conn: sqlite3.Connection, base: Path, *, as_json: bool) -> int:
             "ORDER BY count DESC, last_seen DESC LIMIT 20"
         )
     ]
+    rules = _status_rules(conn)
     enabled = store.is_enabled(conn)
     from . import verify
 
@@ -178,7 +181,13 @@ def cmd_status(conn: sqlite3.Connection, base: Path, *, as_json: bool) -> int:
     if as_json:
         for p in patterns:
             p["trigger_score"] = scores.get(p.get("skill_path") or "")
-        report = {"enabled": enabled, "data_dir": str(base), "counts": counts, "patterns": patterns}
+        report = {
+            "enabled": enabled,
+            "data_dir": str(base),
+            "counts": counts,
+            "patterns": patterns,
+            "rules": rules,
+        }
         print(json.dumps(report, indent=2))
         return 0
 
@@ -198,11 +207,46 @@ def cmd_status(conn: sqlite3.Connection, base: Path, *, as_json: bool) -> int:
                 f"  p{p['id']:<5} {name:<24} {p['count']}x in {p['session_count']} sessions"
                 f"  [{p['state']}]{used}"
             )
+    if rules:
+        print("standing instructions (for CLAUDE.md):")
+        for r in rules:
+            where = f"{r['projects']} projects" if r["projects"] > 1 else "1 project"
+            written = f"  in {paths.display(r['file_path'])}" if r["file_path"] else ""
+            print(
+                f"  r{r['id']:<5} {r['example'] or r['key']}\n"
+                f"         {r['count']}x in {r['sessions']} sessions, {where}"
+                f"  [{r['state']}]{written}"
+            )
     print(
         f"Suggestions: {'on' if enabled else 'paused'} · turns recorded: {counts['turns']}"
         f" · data: {paths.display(base)}"
     )
     return 0
+
+
+def _status_rules(conn: sqlite3.Connection) -> list:
+    from . import clock, rules
+
+    found = []
+    now = clock.now()
+    for row in conn.execute(
+        "SELECT id, key, state, file_path FROM rules WHERE state != 'dismissed' "
+        "ORDER BY last_seen DESC LIMIT 10"
+    ).fetchall():
+        stats = rules.rule_stats(conn, row["id"], now)
+        found.append(
+            {
+                "id": row["id"],
+                "key": row["key"],
+                "state": row["state"],
+                "file_path": row["file_path"],
+                "count": stats["count"],
+                "sessions": stats["sessions"],
+                "projects": len(stats["projects"]),
+                "example": stats["example"],
+            }
+        )
+    return found
 
 
 def _pattern_or_error(text: str) -> Optional[int]:
@@ -216,6 +260,14 @@ def _pattern_or_error(text: str) -> Optional[int]:
 
 
 def cmd_show(conn: sqlite3.Connection, pattern: str, *, as_json: bool) -> int:
+    rule_id = report.parse_rule_id(pattern)
+    if rule_id is not None:
+        rule = report.rule_detail(conn, rule_id, os.getcwd())
+        if rule is None:
+            print(f"skill-spotter: no rule r{rule_id}.", file=sys.stderr)
+            return 1
+        print(json.dumps(rule, indent=2) if as_json else report.format_rule(rule))
+        return 0
     workflow_id = report.parse_workflow_id(pattern)
     if workflow_id is not None:
         detail = report.workflow_detail(conn, workflow_id)
@@ -239,6 +291,13 @@ def cmd_show(conn: sqlite3.Connection, pattern: str, *, as_json: bool) -> int:
 
 def cmd_accept(conn: sqlite3.Connection, pattern: str, skill_path: str) -> int:
     path = os.path.abspath(os.path.expanduser(skill_path))
+    rule_id = report.parse_rule_id(pattern)
+    if rule_id is not None:
+        if not lifecycle.accept_rule(conn, rule_id, path, time.time()):
+            print(f"skill-spotter: no rule r{rule_id}.", file=sys.stderr)
+            return 1
+        print(f"skill-spotter: r{rule_id} written to {path}.")
+        return 0
     workflow_id = report.parse_workflow_id(pattern)
     if workflow_id is not None:
         if not lifecycle.accept_workflow(conn, workflow_id, path, time.time(), via="draft"):
@@ -257,6 +316,23 @@ def cmd_accept(conn: sqlite3.Connection, pattern: str, skill_path: str) -> int:
 
 
 def cmd_dismiss_or_snooze(conn: sqlite3.Connection, args: argparse.Namespace) -> int:
+    rule_id = report.parse_rule_id(args.pattern)
+    if rule_id is not None:
+        now = time.time()
+        if args.command == "dismiss":
+            ok = lifecycle.dismiss_rule(conn, rule_id, now)
+            done = f"r{rule_id} dismissed; it won't be suggested again."
+        else:
+            ok = lifecycle.snooze_rule(conn, rule_id, args.days, now)
+            done = f"r{rule_id} snoozed for {args.days:g} days."
+        if not ok:
+            print(
+                f"skill-spotter: no rule r{rule_id} (or it's already written down).",
+                file=sys.stderr,
+            )
+            return 1
+        print(f"skill-spotter: {done}")
+        return 0
     pattern_id = _pattern_or_error(args.pattern)
     if pattern_id is None:
         return 2
@@ -289,7 +365,9 @@ def cmd_stats(conn: sqlite3.Connection, *, as_json: bool) -> int:
         f"accepted: {data['accepted']} ({pct}) · snoozed: {data['snoozed']} · "
         f"dismissed: {data['dismissed']}\n"
         f"skills used at least once: {data['skills_used_at_least_once']} "
-        f"({data['skill_uses']} use{'' if data['skill_uses'] == 1 else 's'})"
+        f"({data['skill_uses']} use{'' if data['skill_uses'] == 1 else 's'})\n"
+        f"standing instructions: {data['rules']} · suggested: {data['rules_suggested']} · "
+        f"added to CLAUDE.md: {data['rules_accepted']}"
     )
     return 0
 

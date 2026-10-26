@@ -70,9 +70,10 @@ def on_action(event: Event) -> None:
 
 
 def on_turn_end(event: Event) -> Optional[str]:
-    """Claude finished responding. Extra: ``scheduled_prompts``.
+    """Claude finished responding. Extra: ``scheduled_prompts``, ``instruction_files`` (the
+    files the editor loads as standing instructions in this session).
     Returns suggestion text to show the user, or None."""
-    from . import lifecycle, patterns, project, recorder, suggest, workflows
+    from . import lifecycle, patterns, project, recorder, rules, suggest, workflows
 
     text = None
     conn = _connect()
@@ -84,6 +85,8 @@ def on_turn_end(event: Event) -> Optional[str]:
         )
         prompt_id = event.get("prompt_id")
         pattern_id = patterns.finalize_turn(conn, prompt_id, now) if prompt_id else None
+        if prompt_id:
+            rules.record_turn(conn, prompt_id)
         project_key = project.project_key(event.get("cwd"))
         lifecycle.scan_for_created_skills(conn, project_key, now)
         if pattern_id is not None:
@@ -93,6 +96,10 @@ def on_turn_end(event: Event) -> Optional[str]:
                 text = suggest.maybe_suggest(conn, pattern_id, session_id, now)
         if text is None:  # patterns the background job marked ready in this project
             text = suggest.suggest_ready(conn, project_key, session_id, now)
+        if text is None:  # a standing instruction worth putting in CLAUDE.md (ADR 0010)
+            text = rules.maybe_suggest(
+                conn, project_key, session_id, event.get("instruction_files") or [], now
+            )
         if text:
             from . import band
 

@@ -29,11 +29,13 @@ def log_event(
     now: float,
     pattern_id: Optional[int] = None,
     session_id: Optional[str] = None,
+    rule_id: Optional[int] = None,
     **data,
 ) -> None:
     conn.execute(
-        "INSERT INTO events(ts, type, pattern_id, session_id, data_json) VALUES(?, ?, ?, ?, ?)",
-        (now, kind, pattern_id, session_id, json.dumps(data)),
+        "INSERT INTO events(ts, type, pattern_id, session_id, rule_id, data_json) "
+        "VALUES(?, ?, ?, ?, ?, ?)",
+        (now, kind, pattern_id, session_id, rule_id, json.dumps(data)),
     )
 
 
@@ -175,6 +177,7 @@ def snooze_unanswered(conn: sqlite3.Connection, session_id: Optional[str], now: 
                 "WHERE id = ?",
                 (DISMISS_AFTER_SNOOZES, now + SNOOZE_DAYS * DAY, wid),
             )
+        _snooze_unanswered_rules(conn, session_id, now)
     """SessionEnd: suggestions made in this session that are still waiting get snoozed;
     the second snooze dismisses the pattern."""
     if not session_id:
@@ -226,6 +229,64 @@ def dismiss(conn: sqlite3.Connection, pattern_id: int, now: float) -> bool:
     return bool(cur.rowcount)
 
 
+# Rules (ADR 0010) follow the same lifecycle; "accepted" means the rule was written to an
+# instruction file such as CLAUDE.md.
+
+
+def accept_rule(conn: sqlite3.Connection, rule_id: int, file_path: str, now: float) -> bool:
+    cur = conn.execute(
+        "UPDATE rules SET state = 'accepted', file_path = ?, state_until = NULL WHERE id = ?",
+        (file_path, rule_id),
+    )
+    if cur.rowcount:
+        log_event(conn, "accepted", now, rule_id=rule_id, via="rule", file_path=file_path)
+    return bool(cur.rowcount)
+
+
+def snooze_rule(conn: sqlite3.Connection, rule_id: int, days: float, now: float) -> bool:
+    cur = conn.execute(
+        "UPDATE rules SET state = 'snoozed', state_until = ?, snooze_count = snooze_count + 1 "
+        "WHERE id = ? AND state != 'accepted'",
+        (now + days * DAY, rule_id),
+    )
+    if cur.rowcount:
+        log_event(conn, "snoozed", now, rule_id=rule_id, until=now + days * DAY, via="cli")
+    return bool(cur.rowcount)
+
+
+def dismiss_rule(conn: sqlite3.Connection, rule_id: int, now: float) -> bool:
+    cur = conn.execute(
+        "UPDATE rules SET state = 'dismissed', state_until = NULL WHERE id = ?", (rule_id,)
+    )
+    if cur.rowcount:
+        log_event(conn, "dismissed", now, rule_id=rule_id, reason="cli")
+    return bool(cur.rowcount)
+
+
+def _snooze_unanswered_rules(conn: sqlite3.Connection, session_id: str, now: float) -> None:
+    for row in conn.execute(
+        "SELECT DISTINCT r.id, r.snooze_count FROM events e JOIN rules r ON r.id = e.rule_id "
+        "WHERE e.type = 'suggested' AND e.session_id = ? AND r.state = 'suggested'",
+        (session_id,),
+    ).fetchall():
+        count = row["snooze_count"] + 1
+        if count >= DISMISS_AFTER_SNOOZES:
+            conn.execute(
+                "UPDATE rules SET state = 'dismissed', snooze_count = ?, state_until = NULL "
+                "WHERE id = ?",
+                (count, row["id"]),
+            )
+            log_event(conn, "dismissed", now, None, session_id, row["id"], reason="snoozed twice")
+        else:
+            until = now + SNOOZE_DAYS * DAY
+            conn.execute(
+                "UPDATE rules SET state = 'snoozed', snooze_count = ?, state_until = ? "
+                "WHERE id = ?",
+                (count, until, row["id"]),
+            )
+            log_event(conn, "snoozed", now, None, session_id, row["id"], until=until)
+
+
 def maybe_prune(conn: sqlite3.Connection, now: float) -> int:
     """Delete turns and actions older than 90 days, at most once a day. Patterns keep
     their aggregates (count, representative), so detection isn't affected."""
@@ -242,6 +303,7 @@ def maybe_prune(conn: sqlite3.Connection, now: float) -> int:
         conn.execute(f"DELETE FROM actions WHERE prompt_id IN ({marks})", chunk)
         conn.execute(f"DELETE FROM turns WHERE prompt_id IN ({marks})", chunk)
     conn.execute("DELETE FROM actions WHERE ts < ? AND prompt_id IS NULL", (cutoff,))
+    conn.execute("DELETE FROM directives WHERE ts < ?", (cutoff,))
     conn.execute("DELETE FROM session_meta WHERE updated < ?", (cutoff,))
     store.set_setting(conn, "last_prune", str(now))
     return len(old)
@@ -267,4 +329,9 @@ def stats(conn: sqlite3.Connection) -> Dict[str, Any]:
         "skill_uses": scalar("SELECT COUNT(*) FROM events WHERE type = 'used'"),
         "snoozed": scalar("SELECT COUNT(*) FROM patterns WHERE state = 'snoozed'"),
         "dismissed": scalar("SELECT COUNT(*) FROM patterns WHERE state = 'dismissed'"),
+        "rules": scalar("SELECT COUNT(*) FROM rules"),
+        "rules_suggested": scalar(
+            "SELECT COUNT(DISTINCT rule_id) FROM events WHERE type = 'suggested'"
+        ),
+        "rules_accepted": scalar("SELECT COUNT(*) FROM rules WHERE state = 'accepted'"),
     }

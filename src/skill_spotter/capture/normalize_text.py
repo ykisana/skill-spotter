@@ -7,7 +7,7 @@ stop-words out → light stemming. ``ngrams`` turns the result into 1–2-grams.
 from __future__ import annotations
 
 import re
-from typing import List, Set
+from typing import FrozenSet, List, Set
 
 _PLACEHOLDERS = [
     ("<url>", re.compile(r"\b(?:https?|ftp|ssh|git)://\S+|\bwww\.\S+")),
@@ -122,8 +122,9 @@ def _stem(word: str) -> str:
     return word
 
 
-def normalize(text: str) -> List[str]:
-    """Normalized tokens for ``text``, in order."""
+def normalize(text: str, keep: FrozenSet[str] = frozenset()) -> List[str]:
+    """Normalized tokens for ``text``, in order. Stop words in ``keep`` are kept."""
+    stop = STOP_WORDS - keep if keep else STOP_WORDS
     text = text.lower()
     for placeholder, pattern in _PLACEHOLDERS:
         text = pattern.sub(f" {placeholder} ", text)
@@ -132,11 +133,11 @@ def normalize(text: str) -> List[str]:
     tokens = []
     for raw in _TOKEN.findall(text):
         word = _WORDS.get(raw, raw)
-        if word in STOP_WORDS:
+        if word in stop:
             continue
         stemmed = _stem(word)
         stemmed = _WORDS.get(stemmed, stemmed)
-        if stemmed not in STOP_WORDS:  # "running" -> "run", which is a stop-word
+        if stemmed not in stop:  # "running" -> "run", which is a stop-word
             tokens.append(stemmed)
     return tokens
 

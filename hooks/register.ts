@@ -12,6 +12,7 @@ type Pending = {
   id?: string
   name?: string
   draft?: string
+  action?: string // button label when it isn't "Create /name", e.g. "Add to CLAUDE.md"
   data_dir?: string
 }
 
@@ -61,7 +62,7 @@ export function register(on: any) {
       pending.draft
         ? Button({
             key: 'create',
-            label: pending.name ? `Create /${pending.name}` : 'Create skill',
+            label: pending.action ?? (pending.name ? `Create /${pending.name}` : 'Create skill'),
             hotkey: '1',
             onPress: async () => {
               await $.prompt.fill({ text: pending!.draft })
@@ -76,7 +77,7 @@ export function register(on: any) {
             hotkey: '2',
             onPress: async () => {
               const p = pending!
-              if (p.id!.startsWith('p')) {
+              if (p.id!.startsWith('p') || p.id!.startsWith('r')) {
                 await cli($, [...(p.data_dir ? ['--data-dir', p.data_dir] : []), 'snooze', p.id!])
               }
               close()

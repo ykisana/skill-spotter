@@ -147,3 +147,45 @@ test('after /clear, suggestions are fetched for the new session id', async ($, o
   await $.turn.complete(TURN)
   expect(runs[runs.length - 1].slice(1)).toEqual(['band', 'pending', '--session', 'after-clear'])
 })
+
+const RULE = {
+  text:
+    'skill-spotter: you\'ve asked for this in 4 prompts across 3 projects: "no claude author". ' +
+    'To add it to CLAUDE.md, run /skill-spotter:rule r3',
+  summary: 'You\'ve asked for this in 4 prompts across 3 projects: "no claude author"',
+  id: 'r3',
+  name: null,
+  draft: '/skill-spotter:rule r3',
+  action: 'Add to CLAUDE.md',
+  data_dir: '/data/skill-spotter-skill-spotter',
+}
+
+test('a standing instruction offers "Add to CLAUDE.md" and fills the rule command', async ($, on) => {
+  stubs(on, RULE)
+  const fills: string[] = []
+  on('prompt.fill', ($: any, e: any) => {
+    fills.push(e.text)
+    return { isFilled: true }
+  })
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await $.turn.complete(TURN)
+  const ui = await $.ui.mount(BAND)
+  const button = await ui.find({ key: 'create' })
+  expect(button?.props.label).toBe('Add to CLAUDE.md')
+  await ui.press({ key: 'create' })
+  expect(fills).toEqual(['/skill-spotter:rule r3'])
+})
+
+test('Not now snoozes a standing instruction too', async ($, on) => {
+  const runs = stubs(on, RULE)
+  await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/work' })
+  await $.turn.complete(TURN)
+  const ui = await $.ui.mount(BAND)
+  await ui.press({ key: 'later' })
+  expect(runs[runs.length - 1].slice(1)).toEqual([
+    '--data-dir',
+    '/data/skill-spotter-skill-spotter',
+    'snooze',
+    'r3',
+  ])
+})

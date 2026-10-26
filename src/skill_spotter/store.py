@@ -174,6 +174,35 @@ MIGRATIONS: list[str] = [
     ALTER TABLE session_meta ADD COLUMN band_active INTEGER NOT NULL DEFAULT 0;
     ALTER TABLE session_meta ADD COLUMN pending_band TEXT;
     """,
+    # 6: standing instructions repeated across prompts, offered for CLAUDE.md (ADR 0010)
+    """
+    CREATE TABLE rules (
+        id           INTEGER PRIMARY KEY,
+        key          TEXT NOT NULL UNIQUE,
+        first_seen   REAL NOT NULL,
+        last_seen    REAL NOT NULL,
+        state        TEXT NOT NULL DEFAULT 'candidate'
+                     CHECK (state IN ('candidate', 'suggested', 'accepted', 'snoozed',
+                                      'dismissed')),
+        state_until  REAL,
+        snooze_count INTEGER NOT NULL DEFAULT 0,
+        file_path    TEXT
+    );
+    CREATE TABLE directives (
+        id          INTEGER PRIMARY KEY,
+        prompt_id   TEXT NOT NULL,
+        session_id  TEXT NOT NULL,
+        project_key TEXT NOT NULL,
+        ts          REAL NOT NULL,
+        text        TEXT NOT NULL,
+        words_json  TEXT NOT NULL,
+        rule_id     INTEGER REFERENCES rules(id) ON DELETE SET NULL,
+        UNIQUE (prompt_id, text)
+    );
+    CREATE INDEX directives_ts ON directives(ts);
+    CREATE INDEX directives_rule ON directives(rule_id);
+    ALTER TABLE events ADD COLUMN rule_id INTEGER;
+    """,
 ]
 
 SCHEMA_VERSION = len(MIGRATIONS)

@@ -24,6 +24,79 @@ def parse_workflow_id(text: str) -> Optional[int]:
     return int(text[1:]) if text.startswith("w") and text[1:].isdigit() else None
 
 
+def parse_rule_id(text: str) -> Optional[int]:
+    text = (text or "").strip().lower()
+    return int(text[1:]) if text.startswith("r") and text[1:].isdigit() else None
+
+
+MAX_RULE_EXAMPLES = 10
+
+
+def rule_detail(
+    conn: sqlite3.Connection, rule_id: int, cwd: Optional[str] = None
+) -> Optional[Dict[str, Any]]:
+    """Everything the rule skill needs to add a standing instruction to CLAUDE.md (ADR 0010)."""
+    from . import clock, project, rules
+
+    r = conn.execute("SELECT * FROM rules WHERE id = ?", (rule_id,)).fetchone()
+    if r is None:
+        return None
+    rows = conn.execute(
+        "SELECT d.text, d.project_key, d.ts, t.prompt_redacted FROM directives d "
+        "LEFT JOIN turns t ON t.prompt_id = d.prompt_id WHERE d.rule_id = ? "
+        "ORDER BY d.ts DESC LIMIT ?",
+        (rule_id, MAX_RULE_EXAMPLES),
+    ).fetchall()
+    stats = rules.rule_stats(conn, rule_id, clock.now())
+    projects = stats["projects"] or sorted({row["project_key"] for row in rows})
+    personal = os.path.expanduser(os.path.join("~", ".claude", "CLAUDE.md"))
+    # Seen in one project: that project's CLAUDE.md. Otherwise the user's own file, with the
+    # current project's file as the alternative.
+    one_project = len(projects) == 1 and projects[0] != "?"
+    root = projects[0] if one_project else (project.project_root(cwd) if cwd else None)
+    if root == os.path.expanduser("~"):
+        root = None
+    project_file = os.path.join(root, "CLAUDE.md") if root else None
+    scope = "project" if one_project else "personal"
+    target = project_file if one_project else personal
+    return {
+        "id": f"r{r['id']}",
+        "kind": "rule",
+        "state": r["state"],
+        "words": r["key"].split(),
+        "count": stats["count"],
+        "sessions": stats["sessions"],
+        "projects": projects,
+        "first_seen": _iso(r["first_seen"]),
+        "last_seen": _iso(r["last_seen"]),
+        "instructions": [
+            {
+                "said": row["text"],
+                "in_prompt": (row["prompt_redacted"] or row["text"])[:400],
+                "project": row["project_key"],
+                "when": _iso(row["ts"]),
+            }
+            for row in rows
+        ],
+        "scope": scope,
+        "targets": {"personal": personal, "project": project_file},
+        "target_path": target,
+        "target_exists": bool(target) and os.path.isfile(target),
+    }
+
+
+def format_rule(d: Dict[str, Any]) -> str:
+    lines = [
+        f"{d['id']}  [{d['state']}]  {d['count']} prompts in {d['sessions']} sessions, "
+        f"{len(d['projects'])} project{'s' if len(d['projects']) != 1 else ''}",
+        f"key words: {' '.join(d['words'])}",
+        f"would go in: {d['target_path']} ({d['scope']})",
+        "what you said:",
+    ]
+    lines += [f"  - [{i['when']}] {i['said']}" for i in d["instructions"]]
+    return "\n".join(lines)
+
+
 def workflow_detail(conn: sqlite3.Connection, workflow_id: int) -> Optional[Dict[str, Any]]:
     """A multi-prompt workflow: each step's pattern detail, in order (M5)."""
     w = conn.execute("SELECT * FROM workflows WHERE id = ?", (workflow_id,)).fetchone()

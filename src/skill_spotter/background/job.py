@@ -8,6 +8,7 @@
    sometimes splits a task early.
 4. Mark merged patterns that now cross the trigger rule ``ready``; the next Stop in that
    project shows the suggestion.
+5. Once, read standing instructions out of turns recorded before rules existed (ADR 0010).
 
     python3 -S job.py --data-dir DIR        (started by background.launcher)
 """
@@ -207,6 +208,11 @@ def run(base: Path, now: float) -> Dict:
             )
             if target >= 0 and mark_ready(conn, target, now):
                 summary["ready"] += 1
+    from skill_spotter import rules
+
+    # Instructions in turns recorded before rules existed (ADR 0010); later turns are read
+    # when they end.
+    summary["instructions"] = rules.backfill(conn, now)
     total = conn.execute("SELECT COUNT(*) FROM turns WHERE finalized = 1").fetchone()[0]
     store.set_setting(conn, "background_last_turns", str(total))
     store.set_setting(conn, "background_last_run", str(now))
